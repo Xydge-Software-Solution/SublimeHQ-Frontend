@@ -15,7 +15,7 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-600 via-blue-500 to-cyan-400 flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-blue-600 via-blue-500 to-cyan-400 flex flex-col justify-center">
       {/* Logo */}
       <div className="pt-8 pb-4 flex justify-center">
         <Link href="/">
@@ -31,10 +31,10 @@ export default function RegisterPage() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex items-center justify-center px-4 pb-8">
-        <div className="w-full max-w-md">
+      <div className=" flex items-center justify-center p-8 pb-8">
+        <div className="w-full md:max-w-2xl">
           {/* Card */}
-          <div className="bg-white rounded-3xl shadow-2xl p-8 md:p-10">
+          <div className="bg-white rounded-xl shadow-2xl p-8 md:p-10">
             {/* Title */}
             <h1 className="text-2xl md:text-3xl font-bold text-gray-900 text-center mb-3">
               Turn your product into a live storefront in minutes
