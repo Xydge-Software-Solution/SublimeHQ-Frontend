@@ -89,9 +89,12 @@ export default function Navbar() {
 
         <div className="flex items-center gap-3">
           {/* Desktop CTA */}
-          <button className="hidden sm:block px-5 py-2 text-sm font-medium text-white bg-gray-900 rounded-full hover:bg-gray-800 transition-colors">
+          <Link 
+            href="/register"
+            className="hidden sm:block px-5 py-2 text-sm font-medium text-white bg-gray-900 rounded-full hover:bg-gray-800 transition-colors"
+          >
             Start for free
-          </button>
+          </Link>
 
           {/* Hamburger Button */}
           <button
@@ -151,9 +154,13 @@ export default function Navbar() {
           ))}
         </div>
         <div className="p-4 pt-2 border-t border-gray-100">
-          <button className="w-full px-5 py-3 text-sm font-medium text-white bg-gray-900 rounded-full hover:bg-gray-800 transition-colors">
+          <Link 
+            href="/register"
+            className="block w-full px-5 py-3 text-sm font-medium text-white bg-gray-900 rounded-full hover:bg-gray-800 transition-colors text-center"
+            onClick={() => setIsOpen(false)}
+          >
             Start for free
-          </button>
+          </Link>
         </div>
       </div>
     </>

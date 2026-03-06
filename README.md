@@ -1,20 +1,60 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# Sublime
 
-# Run and deploy your AI Studio app
+Welcome to **Sublime**, a modern and responsive web application built with [Next.js](https://nextjs.org/), React, TypeScript, and Tailwind CSS.
 
-This contains everything you need to run your app locally.
+## 🚀 Project Overview
 
-View your app in AI Studio: https://ai.studio/apps/383bd6d2-488a-492c-bdd6-3dd1a20d75f9
+This project serves as a comprehensive landing page or web platform featuring a variety of high-quality UI sections tailored for modern web experiences.
 
-## Run Locally
+### Key Features & Components
+- **Hero Section**: Engaging first impression with the `Hero.tsx` component.
+- **Bento Grid**: A stunning layout for showcasing features using `BentoGridSection.tsx`.
+- **AI Integration**: Dedicated `AiSection.tsx` for highlighting AI-powered capabilities.
+- **Social Proof**: Trust indicators via `TestimonialSection.tsx` and `StatsSection.tsx`.
+- **User Flow**: Clear user journey demonstrated by `StepsSection.tsx` and `StackedCardsSection.tsx`.
+- **Call To Action**: High-conversion `CtaSection.tsx`.
 
-**Prerequisites:**  Node.js
+## 🛠️ Tech Stack
 
+- **Framework**: [Next.js](https://nextjs.org/) (App Router)
+- **Language**: [TypeScript](https://www.typescriptlang.org/)
+- **Styling**: [Tailwind CSS](https://tailwindcss.com/)
+- **Utilities**: Custom hooks (e.g., `use-mobile.ts`) and helpers (`lib/utils.ts` for clean class merging).
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+## 💻 Getting Started
+
+To get a local copy up and running, follow these steps.
+
+### Prerequisites
+- Node.js 18.x or later installed on your machine.
+- Your preferred Node package manager (npm, yarn, pnpm, bun).
+
+### Installation
+1. Navigate to the project directory:
+   ```bash
+   cd sublime
+   ```
+2. Install the dependencies:
+   ```bash
+   npm install
+   # or yarn install / pnpm install
+   ```
+
+### Running the Development Server
+Start the development server:
+```bash
+npm run dev
+# or yarn dev / pnpm dev
+```
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+
+## 📁 Project Structure
+
+- `app/`: Next.js App Router core (`layout.tsx`, `page.tsx`, `globals.css`).
+- `components/`: Reusable React UI sections (Hero, Navbar, Footer, etc.).
+- `hooks/`: Custom React hooks specific to UI or domain logic.
+- `lib/`: Utility functions and configuration helpers.
+- `public/`: Static assets and media.
+
+## 📄 License
+Copyright (c) 2026 XYGDE LLC. All Rights Reserved.

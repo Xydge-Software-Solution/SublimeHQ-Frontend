@@ -1,5 +1,6 @@
 'use client';
 import { motion } from 'motion/react';
+import Link from 'next/link';
 
 export default function Hero() {
   return (
@@ -35,9 +36,12 @@ export default function Hero() {
           transition={{ delay: 0.3 }}
           className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6"
         >
-          <button className="px-8 py-3.5 text-base font-medium text-white bg-gray-900 rounded-full hover:bg-gray-800 transition-colors w-full sm:w-auto">
+          <Link 
+            href="/register"
+            className="px-8 py-3.5 text-base font-medium text-white bg-gray-900 rounded-full hover:bg-gray-800 transition-colors w-full sm:w-auto text-center"
+          >
             Start selling for free
-          </button>
+          </Link>
           <button className="px-8 py-3.5 text-base font-medium text-gray-900 bg-transparent border border-gray-900 rounded-full hover:bg-gray-900/5 transition-colors w-full sm:w-auto">
             See how it works
           </button>

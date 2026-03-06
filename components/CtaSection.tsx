@@ -1,5 +1,6 @@
 'use client';
 import { motion } from 'motion/react';
+import Link from 'next/link';
 
 export default function CtaSection() {
   return (
@@ -18,9 +19,12 @@ export default function CtaSection() {
         <p className="text-xl text-blue-100/80 mb-10 leading-relaxed">
           Stop planning. Start selling. Sublime gets you live today with everything you need to build a real business from what you create.
         </p>
-        <button className="px-10 py-4 text-lg font-bold text-white bg-[#0052FF] rounded-full hover:bg-blue-600 transition-colors shadow-[0_0_20px_rgba(0,82,255,0.4)]">
+        <Link 
+          href="/register"
+          className="inline-block px-10 py-4 text-lg font-bold text-white bg-[#0052FF] rounded-full hover:bg-blue-600 transition-colors shadow-[0_0_20px_rgba(0,82,255,0.4)]"
+        >
           Create your free store
-        </button>
+        </Link>
         <p className="mt-6 text-sm text-blue-200/60">
           No setup fees. No monthly cost to start.<br />Your first sale could be today.
         </p>
