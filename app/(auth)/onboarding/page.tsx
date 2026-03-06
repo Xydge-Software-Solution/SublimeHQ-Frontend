@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
 import { Check, Sparkles, Globe, Store, Building2, Lightbulb, Package, Users, GraduationCap, Ticket, ShoppingBag, ChevronLeft, ChevronRight, PartyPopper, ArrowRight } from "lucide-react";
+import { storage } from "@/lib/storage";
 
 // Types
 interface SellOption {
@@ -159,14 +160,15 @@ export default function OnboardingPage() {
   };
 
   const handleComplete = async () => {
-    // TODO: Save onboarding data to API
+    // Save onboarding data to localStorage
     const onboardingData = {
-      sellChannels: selectedSellOptions,
+      sellOptions: selectedSellOptions,
       businessType,
       productTypes: selectedProductTypes,
       storeName,
       storeDescription,
     };
+    storage.setOnboarding(onboardingData);
     console.log("Onboarding complete:", onboardingData);
     
     setShowSuccess(true);

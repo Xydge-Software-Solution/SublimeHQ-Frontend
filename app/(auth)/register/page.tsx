@@ -2,15 +2,15 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { storage } from '@/lib/storage';
 
 export default function RegisterPage() {
   const router = useRouter();
 
   const handleGoogleSignup = () => {
-    // TODO: Implement Google OAuth signup
-    console.log('Google signup clicked');
-    // When API is ready: window.location.href = '/api/auth/google';
-    // For now, redirect to onboarding
+    // Simulate Google OAuth signup with localStorage
+    storage.login('user@gmail.com', 'Google User');
+    // Redirect to onboarding
     router.push('/onboarding');
   };
 

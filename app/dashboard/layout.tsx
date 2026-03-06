@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { 
   LayoutDashboard, 
   Store, 
@@ -16,8 +16,10 @@ import {
   Menu,
   X,
   LogOut,
-  ChevronDown
+  ChevronDown,
+  Bell
 } from "lucide-react";
+import { storage, type UserData } from "@/lib/storage";
 
 const menuItems = [
   { name: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
@@ -40,7 +42,15 @@ export default function DashboardLayout({
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [user, setUser] = useState<UserData | null>(null);
   const pathname = usePathname();
+  const router = useRouter();
+
+  // Load user data from localStorage
+  useEffect(() => {
+    const userData = storage.getUser();
+    setUser(userData);
+  }, []);
 
   // Close sidebar on route change (mobile)
   useEffect(() => {
@@ -61,6 +71,11 @@ export default function DashboardLayout({
     document.addEventListener("keydown", handleEscape);
     return () => document.removeEventListener("keydown", handleEscape);
   }, []);
+
+  const handleSignOut = () => {
+    storage.logout();
+    router.push("/login");
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -157,8 +172,8 @@ export default function DashboardLayout({
                   <User className="w-5 h-5 text-white" />
                 </div>
                 <div className="flex-1 text-left">
-                  <p className="text-sm font-medium text-white">John Doe</p>
-                  <p className="text-xs text-white/60">john@example.com</p>
+                  <p className="text-sm font-medium text-white">{user?.name || "User"}</p>
+                  <p className="text-xs text-white/60">{user?.email || "user@example.com"}</p>
                 </div>
                 <ChevronDown
                   className={`w-4 h-4 text-white/60 transition-transform ${
@@ -185,7 +200,10 @@ export default function DashboardLayout({
                     <span>Settings</span>
                   </Link>
                   <hr className="my-2" />
-                  <button className="w-full flex items-center gap-2 px-4 py-2 text-red-600 hover:bg-red-50">
+                  <button 
+                    onClick={handleSignOut}
+                    className="w-full flex items-center gap-2 px-4 py-2 text-red-600 hover:bg-red-50"
+                  >
                     <LogOut className="w-4 h-4" />
                     <span>Sign out</span>
                   </button>
@@ -217,7 +235,7 @@ export default function DashboardLayout({
             </div>
 
             {/* Right side actions */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-4">
               <Link
                 href="/dashboard/storefront"
                 className="hidden sm:flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
@@ -225,11 +243,24 @@ export default function DashboardLayout({
                 <Store className="w-4 h-4" />
                 View Store
               </Link>
-              
-              {/* Mobile user avatar */}
-              <button className="lg:hidden w-9 h-9 rounded-full bg-gray-200 flex items-center justify-center">
-                <User className="w-5 h-5 text-gray-600" />
+
+              {/* Notifications */}
+              <button className="relative p-2 text-gray-600 hover:text-gray-900 transition-colors rounded-full hover:bg-gray-100">
+                <Bell className="w-5 h-5" />
+                <span className="absolute top-1.5 right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white ring-2 ring-white">
+                  3
+                </span>
               </button>
+
+              {/* User Avatar */}
+              <div className="relative h-9 w-9 overflow-hidden rounded-full border-2 border-gray-200 shadow-sm cursor-pointer ring-2 ring-transparent transition-all hover:ring-blue-200">
+                <Image
+                  src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop"
+                  alt="User Avatar"
+                  fill
+                  className="object-cover"
+                />
+              </div>
             </div>
           </div>
 

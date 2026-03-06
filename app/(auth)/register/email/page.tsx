@@ -3,6 +3,7 @@ import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { storage } from '@/lib/storage';
 
 export default function RegisterEmailPage() {
   const router = useRouter();
@@ -61,13 +62,13 @@ export default function RegisterEmailPage() {
     setIsLoading(true);
 
     try {
-      // TODO: Implement API call when ready
-      console.log('Form submitted:', formData);
-      
       // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise(resolve => setTimeout(resolve, 500));
       
-      // On success, redirect to onboarding
+      // Register user with localStorage
+      storage.login(formData.email, formData.name);
+      
+      // Redirect to onboarding
       router.push('/onboarding');
     } catch (error) {
       console.error('Registration error:', error);

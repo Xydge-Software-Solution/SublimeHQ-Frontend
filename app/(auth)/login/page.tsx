@@ -3,6 +3,7 @@ import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { storage } from '@/lib/storage';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -15,9 +16,10 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleGoogleLogin = () => {
-    // TODO: Implement Google OAuth login
-    console.log('Google login clicked');
-    // When API is ready: window.location.href = '/api/auth/google';
+    // Simulate Google OAuth login with localStorage
+    storage.login('user@gmail.com', 'Google User');
+    const hasOnboarding = storage.hasCompletedOnboarding();
+    router.push(hasOnboarding ? '/dashboard' : '/onboarding');
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -53,15 +55,15 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      // TODO: Implement API call when ready
-      console.log('Login submitted:', formData);
+      // Simulate login with localStorage
+      await new Promise(resolve => setTimeout(resolve, 500));
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Login user
+      storage.login(formData.email, formData.email.split('@')[0]);
       
-      // On success, redirect to dashboard
-      // router.push('/dashboard');
-      alert('Login successful! (API not connected yet)');
+      // Check if onboarding is completed
+      const hasOnboarding = storage.hasCompletedOnboarding();
+      router.push(hasOnboarding ? '/dashboard' : '/onboarding');
     } catch (error) {
       console.error('Login error:', error);
       setErrors({ submit: 'Invalid email or password' });
