@@ -1,12 +1,17 @@
 'use client';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 export default function RegisterPage() {
+  const router = useRouter();
+
   const handleGoogleSignup = () => {
     // TODO: Implement Google OAuth signup
     console.log('Google signup clicked');
     // When API is ready: window.location.href = '/api/auth/google';
+    // For now, redirect to onboarding
+    router.push('/onboarding');
   };
 
   return (

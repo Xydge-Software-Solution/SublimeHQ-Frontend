@@ -67,9 +67,8 @@ export default function RegisterEmailPage() {
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // On success, redirect to dashboard or onboarding
-      // router.push('/dashboard');
-      alert('Registration successful! (API not connected yet)');
+      // On success, redirect to onboarding
+      router.push('/onboarding');
     } catch (error) {
       console.error('Registration error:', error);
       setErrors({ submit: 'Registration failed. Please try again.' });
