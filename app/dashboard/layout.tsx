@@ -78,18 +78,17 @@ export default function DashboardLayout({
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <div className="h-full bg-gradient-to-b from-blue-600 via-blue-700 to-indigo-800 flex flex-col">
+        <div className="h-full bg-gradient-to-b from-blue-600 to-[#0c3e67] flex flex-col">
           {/* Logo */}
           <div className="p-6 flex items-center justify-between">
             <Link href="/dashboard" className="flex items-center gap-2">
               <Image
                 src="/logo.png"
                 alt="Sublime"
-                width={36}
-                height={36}
+                width={150}
+                height={150}
                 className="rounded-lg"
               />
-              <span className="text-xl font-bold text-white">Sublime</span>
             </Link>
             <button
               onClick={() => setSidebarOpen(false)}

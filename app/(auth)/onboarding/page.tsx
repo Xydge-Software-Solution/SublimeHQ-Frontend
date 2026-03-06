@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
@@ -177,7 +177,7 @@ export default function OnboardingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-600 via-blue-500 to-cyan-400  flex flex-col items-center justify-center p-4">
       {/* Success Modal */}
       <AnimatePresence>
         {showSuccess && (
@@ -189,11 +189,11 @@ export default function OnboardingPage() {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-2xl bg-white rounded-2xl shadow-2xl overflow-hidden"
+        className="w-full max-w-3xl bg-white rounded-xl shadow-2xl overflow-hidden"
       >
         {/* Header */}
         <div className="px-8 pt-8 pb-4">
-          <div className="flex items-center justify-center mb-6">
+          <div className="flex items-center justify-center mb-6 flex-col">
             <Image
               src="/logo.png"
               alt="Sublime"
@@ -203,21 +203,6 @@ export default function OnboardingPage() {
             />
             <span className="text-2xl font-bold text-gray-900">Sublime</span>
           </div>
-
-          {/* Progress Bar */}
-          <div className="flex items-center gap-2 mb-2">
-            {Array.from({ length: totalSteps }).map((_, i) => (
-              <div
-                key={i}
-                className={`h-1.5 flex-1 rounded-full transition-colors duration-300 ${
-                  i < currentStep ? "bg-blue-600" : "bg-gray-200"
-                }`}
-              />
-            ))}
-          </div>
-          <p className="text-sm text-gray-500 text-center">
-            Step {currentStep} of {totalSteps}
-          </p>
         </div>
 
         {/* Step Content */}
@@ -287,11 +272,28 @@ export default function OnboardingPage() {
                 : "bg-gray-200 text-gray-400 cursor-not-allowed"
             }`}
           >
-            {currentStep === totalSteps ? "Create my store" : "Continue"}
+            {currentStep === totalSteps ? "Create my store" : "Next"}
             <ChevronRight className="w-5 h-5" />
           </button>
         </div>
       </motion.div>
+      
+      {/* Progress indicator below the card */}
+      <div className="w-full max-w-xl mt-22">
+        <div className="flex items-center gap-2 mb-2">
+          {Array.from({ length: totalSteps }).map((_, i) => (
+            <div
+              key={i}
+              className={`h-1.5 flex-1 rounded-full transition-colors duration-300 ${
+                i < currentStep ? "bg-blue-900" : "bg-white/40"
+              }`}
+            />
+          ))}
+        </div>
+        <p className="text-sm text-white text-center">
+          Step {currentStep} of {totalSteps}
+        </p>
+      </div>
     </div>
   );
 }
@@ -404,7 +406,7 @@ function StepTwo({
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <div
-                  className={`p-3 rounded-xl ${
+                  className={`hidden md:flex p-3 rounded-xl ${
                     selected === option.id
                       ? "bg-blue-600 text-white"
                       : "bg-gray-100 text-gray-600"
@@ -413,14 +415,14 @@ function StepTwo({
                   {option.icon}
                 </div>
                 <div>
-                  <h3 className="font-semibold text-lg text-gray-900">
+                  <h3 className="font-semibold text-md md:text-lg text-gray-900">
                     {option.title}
                   </h3>
-                  <p className="text-gray-500">{option.description}</p>
+                  <p className="text-sm md:text-base text-gray-500">{option.description}</p>
                 </div>
               </div>
               <div
-                className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
+                className={`w-3 h-3 md:w-6 md:h-6 rounded-full border-2 flex items-center justify-center ${
                   selected === option.id
                     ? "border-blue-600 bg-blue-600"
                     : "border-gray-300"
@@ -693,15 +695,18 @@ function SuccessModal({
         initial={{ scale: 0.8, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ type: "spring", duration: 0.5 }}
-        className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full text-center relative z-10"
+        className="bg-white rounded-xl shadow-2xl p-8 max-w-2xl w-full text-center relative z-10"
       >
         <motion.div
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
           transition={{ delay: 0.2, type: "spring" }}
-          className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full flex items-center justify-center"
+          className="w-24 h-24 mx-auto mb-6 bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center"
+          style={{
+            clipPath: "polygon(50% 0%, 65% 2%, 79% 10%, 90% 21%, 98% 35%, 100% 50%, 98% 65%, 90% 79%, 79% 90%, 65% 98%, 50% 100%, 35% 98%, 21% 90%, 10% 79%, 2% 65%, 0% 50%, 2% 35%, 10% 21%, 21% 10%, 35% 2%)"
+          }}
         >
-          <Check className="w-10 h-10 text-white" />
+          <Check className="w-12 h-12 font-bold text-white" />
         </motion.div>
 
         <motion.div
@@ -711,7 +716,7 @@ function SuccessModal({
         >
           <div className="flex items-center justify-center gap-2 mb-2">
             <PartyPopper className="w-6 h-6 text-amber-500" />
-            <h2 className="text-2xl font-bold text-gray-900">Congratulations!</h2>
+            <h2 className="text-xl font-bold text-gray-900">Congratulations!</h2>
             <PartyPopper className="w-6 h-6 text-amber-500 transform scale-x-[-1]" />
           </div>
           
@@ -722,7 +727,7 @@ function SuccessModal({
 
           <button
             onClick={onProceed}
-            className="w-full py-4 px-6 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
+            className="w-full py-4 px-6 bg-gradient-to-r from-[#0c3e67] to-[#0c3e67] text-white font-semibold rounded-full hover:from-blue-700 hover:to-indigo-700 transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
           >
             Proceed to Dashboard
             <ArrowRight className="w-5 h-5" />

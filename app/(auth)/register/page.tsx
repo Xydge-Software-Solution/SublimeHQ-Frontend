@@ -32,7 +32,7 @@ export default function RegisterPage() {
 
       {/* Main Content */}
       <div className=" flex items-center justify-center p-8 pb-8">
-        <div className="w-full md:max-w-2xl">
+        <div className="w-full md:max-w-2xl p-8">
           {/* Card */}
           <div className="bg-white rounded-xl shadow-2xl p-8 md:p-10">
             {/* Title */}
