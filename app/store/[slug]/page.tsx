@@ -3,7 +3,8 @@
 import { useEffect, useState, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ShoppingCart, Star, Mail, ExternalLink } from "lucide-react";
+import { useParams } from "next/navigation";
+import { ShoppingCart, Star, Mail, ExternalLink, Plus, Check } from "lucide-react";
 import {
   storage,
   type StorefrontSettings,
@@ -11,10 +12,13 @@ import {
 } from "@/lib/storage";
 
 export default function PublicStorefrontPage() {
+  const params = useParams();
+  const slug = params.slug as string;
   const [settings, setSettings] = useState<StorefrontSettings | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [cartCount, setCartCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+  const [addedProducts, setAddedProducts] = useState<Set<string>>(new Set());
 
   const loadStorefrontData = useCallback(() => {
     const storefrontData = storage.getStorefront();
@@ -27,12 +31,29 @@ export default function PublicStorefrontPage() {
 
     setSettings(storefrontData);
     setProducts(storefrontProducts);
+    setCartCount(storage.getCartItemCount());
     setIsLoading(false);
   }, []);
 
   useEffect(() => {
     loadStorefrontData();
-  }, [loadStorefrontData]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleAddToCart = (productId: string) => {
+    storage.addToCart(productId, 1);
+    setCartCount(storage.getCartItemCount());
+    setAddedProducts((prev) => new Set(prev).add(productId));
+    
+    // Reset after 2 seconds
+    setTimeout(() => {
+      setAddedProducts((prev) => {
+        const next = new Set(prev);
+        next.delete(productId);
+        return next;
+      });
+    }, 2000);
+  };
 
   if (isLoading) {
     return (
@@ -92,14 +113,17 @@ export default function PublicStorefrontPage() {
             </Link>
 
             {navbar.showCart && (
-              <button className="relative p-2 text-gray-600 hover:text-gray-900 transition-colors">
+              <Link 
+                href={`/store/${slug}/cart`}
+                className="relative p-2 text-gray-600 hover:text-gray-900 transition-colors"
+              >
                 <ShoppingCart className="w-6 h-6" />
                 {cartCount > 0 && (
                   <span className="absolute -top-1 -right-1 w-5 h-5 bg-blue-600 text-white text-xs font-bold rounded-full flex items-center justify-center">
                     {cartCount}
                   </span>
                 )}
-              </button>
+              </Link>
             )}
           </div>
         </div>
@@ -153,7 +177,13 @@ export default function PublicStorefrontPage() {
           {products.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {products.map((product) => (
-                <ProductCard key={product.id} product={product} />
+                <ProductCard 
+                  key={product.id} 
+                  product={product}
+                  storeSlug={slug}
+                  onAddToCart={() => handleAddToCart(product.id)}
+                  isAdded={addedProducts.has(product.id)}
+                />
               ))}
             </div>
           ) : (
@@ -318,19 +348,35 @@ export default function PublicStorefrontPage() {
 }
 
 // Product Card Component
-function ProductCard({ product }: { product: Product }) {
+function ProductCard({ 
+  product, 
+  storeSlug,
+  onAddToCart,
+  isAdded,
+}: { 
+  product: Product;
+  storeSlug: string;
+  onAddToCart: () => void;
+  isAdded: boolean;
+}) {
   return (
     <div className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-lg transition-all group">
-      <div className="relative aspect-[4/3] overflow-hidden">
-        <Image
-          src={product.image}
-          alt={product.title}
-          fill
-          className="object-cover group-hover:scale-105 transition-transform duration-300"
-        />
-      </div>
+      <Link href={`/store/${storeSlug}/product/${product.id}`}>
+        <div className="relative aspect-[4/3] overflow-hidden">
+          <Image
+            src={product.image}
+            alt={product.title}
+            fill
+            className="object-cover group-hover:scale-105 transition-transform duration-300"
+          />
+        </div>
+      </Link>
       <div className="p-5">
-        <h3 className="font-semibold text-gray-900 mb-1 line-clamp-1">{product.title}</h3>
+        <Link href={`/store/${storeSlug}/product/${product.id}`}>
+          <h3 className="font-semibold text-gray-900 mb-1 line-clamp-1 hover:text-blue-600 transition-colors">
+            {product.title}
+          </h3>
+        </Link>
         <p className="text-sm text-gray-500 mb-3 line-clamp-2">{product.description}</p>
         <div className="flex items-center justify-between">
           <span className="text-lg font-bold text-gray-900">${product.price.toFixed(2)}</span>
@@ -340,9 +386,38 @@ function ProductCard({ product }: { product: Product }) {
             <span className="text-sm text-gray-400">({product.reviewCount})</span>
           </div>
         </div>
-        <button className="mt-4 w-full py-2.5 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors">
-          Add to Cart
-        </button>
+        <div className="mt-4 flex gap-2">
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              onAddToCart();
+            }}
+            disabled={isAdded}
+            className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-medium rounded-lg transition-colors ${
+              isAdded
+                ? "bg-green-600 text-white"
+                : "bg-gray-100 text-gray-900 hover:bg-gray-200"
+            }`}
+          >
+            {isAdded ? (
+              <>
+                <Check className="w-4 h-4" />
+                Added
+              </>
+            ) : (
+              <>
+                <Plus className="w-4 h-4" />
+                Add
+              </>
+            )}
+          </button>
+          <Link
+            href={`/store/${storeSlug}/checkout?product=${product.id}`}
+            className="flex-1 py-2.5 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors text-center"
+          >
+            Buy Now
+          </Link>
+        </div>
       </div>
     </div>
   );

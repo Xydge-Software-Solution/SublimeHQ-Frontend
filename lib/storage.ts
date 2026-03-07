@@ -108,6 +108,18 @@ export interface StorefrontSettings {
   updatedAt: string;
 }
 
+export interface CartItem {
+  productId: string;
+  quantity: number;
+  addedAt: string;
+}
+
+export interface Cart {
+  items: CartItem[];
+  storeSlug: string;
+  updatedAt: string;
+}
+
 export interface StoreData {
   user: UserData | null;
   onboarding: OnboardingData | null;
@@ -116,6 +128,7 @@ export interface StoreData {
   stats: DashboardStats;
   chartData: ChartDataPoint[];
   storefront: StorefrontSettings;
+  cart: Cart;
   isAuthenticated: boolean;
   hasCompletedOnboarding: boolean;
 }
@@ -271,6 +284,12 @@ const defaultStorefront: StorefrontSettings = {
   updatedAt: new Date().toISOString(),
 };
 
+const defaultCart: Cart = {
+  items: [],
+  storeSlug: "my-store",
+  updatedAt: new Date().toISOString(),
+};
+
 // Initialize store with default data
 function getDefaultStore(): StoreData {
   return {
@@ -281,6 +300,7 @@ function getDefaultStore(): StoreData {
     stats: defaultStats,
     chartData: defaultChartData,
     storefront: defaultStorefront,
+    cart: defaultCart,
     isAuthenticated: true,
     hasCompletedOnboarding: false,
   };
@@ -328,10 +348,14 @@ export const storage = {
           ...defaults.stats,
           ...(parsed.stats || {}),
         },
+        cart: {
+          ...defaults.cart,
+          ...(parsed.cart || {}),
+        },
       };
       
-      // Save merged data back if storefront was missing
-      if (!parsed.storefront) {
+      // Save merged data back if storefront or cart was missing
+      if (!parsed.storefront || !parsed.cart) {
         this.setStore(merged);
       }
       
@@ -571,6 +595,92 @@ export const storage = {
     const store = this.getStore();
     store.storefront.isPublished = false;
     store.storefront.updatedAt = new Date().toISOString();
+    this.setStore(store);
+  },
+
+  // Cart methods
+  getCart(): Cart {
+    return this.getStore().cart;
+  },
+
+  getCartItems(): CartItem[] {
+    return this.getCart().items;
+  },
+
+  getCartItemCount(): number {
+    return this.getCartItems().reduce((sum, item) => sum + item.quantity, 0);
+  },
+
+  getCartTotal(): number {
+    const items = this.getCartItems();
+    let total = 0;
+    for (const item of items) {
+      const product = this.getProduct(item.productId);
+      if (product) {
+        total += product.price * item.quantity;
+      }
+    }
+    return total;
+  },
+
+  getCartWithProducts(): Array<CartItem & { product: Product }> {
+    const items = this.getCartItems();
+    const result: Array<CartItem & { product: Product }> = [];
+    for (const item of items) {
+      const product = this.getProduct(item.productId);
+      if (product) {
+        result.push({ ...item, product });
+      }
+    }
+    return result;
+  },
+
+  addToCart(productId: string, quantity: number = 1): void {
+    const store = this.getStore();
+    const existingIndex = store.cart.items.findIndex(
+      (item) => item.productId === productId
+    );
+
+    if (existingIndex >= 0) {
+      store.cart.items[existingIndex].quantity += quantity;
+    } else {
+      store.cart.items.push({
+        productId,
+        quantity,
+        addedAt: new Date().toISOString(),
+      });
+    }
+    store.cart.updatedAt = new Date().toISOString();
+    this.setStore(store);
+  },
+
+  removeFromCart(productId: string): void {
+    const store = this.getStore();
+    store.cart.items = store.cart.items.filter(
+      (item) => item.productId !== productId
+    );
+    store.cart.updatedAt = new Date().toISOString();
+    this.setStore(store);
+  },
+
+  updateCartItemQuantity(productId: string, quantity: number): void {
+    const store = this.getStore();
+    const item = store.cart.items.find((item) => item.productId === productId);
+    if (item) {
+      if (quantity <= 0) {
+        this.removeFromCart(productId);
+      } else {
+        item.quantity = quantity;
+        store.cart.updatedAt = new Date().toISOString();
+        this.setStore(store);
+      }
+    }
+  },
+
+  clearCart(): void {
+    const store = this.getStore();
+    store.cart.items = [];
+    store.cart.updatedAt = new Date().toISOString();
     this.setStore(store);
   },
 
