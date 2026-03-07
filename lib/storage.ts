@@ -58,6 +58,56 @@ export interface ChartDataPoint {
   users: number;
 }
 
+// Storefront Types
+export interface StorefrontNavbar {
+  logoUrl: string;
+  showCart: boolean;
+}
+
+export interface StorefrontHero {
+  backgroundType: "gradient" | "image";
+  gradientFrom: string;
+  gradientTo: string;
+  gradientDirection: string;
+  backgroundImage: string;
+  headline: string;
+  subheadline: string;
+  textColor: string;
+}
+
+export interface StorefrontTestimonial {
+  id: string;
+  customerName: string;
+  customerAvatar: string;
+  rating: number;
+  content: string;
+  productName: string;
+  createdAt: string;
+}
+
+export interface StorefrontFooter {
+  storeName: string;
+  description: string;
+  supportEmail: string;
+  socialLinks: {
+    twitter?: string;
+    instagram?: string;
+    facebook?: string;
+  };
+  copyrightText: string;
+}
+
+export interface StorefrontSettings {
+  isPublished: boolean;
+  storeSlug: string;
+  navbar: StorefrontNavbar;
+  hero: StorefrontHero;
+  productsOnStorefront: string[]; // Array of product IDs to show
+  testimonials: StorefrontTestimonial[];
+  footer: StorefrontFooter;
+  updatedAt: string;
+}
+
 export interface StoreData {
   user: UserData | null;
   onboarding: OnboardingData | null;
@@ -65,6 +115,7 @@ export interface StoreData {
   orders: Order[];
   stats: DashboardStats;
   chartData: ChartDataPoint[];
+  storefront: StorefrontSettings;
   isAuthenticated: boolean;
   hasCompletedOnboarding: boolean;
 }
@@ -191,6 +242,35 @@ const defaultUser: UserData = {
   createdAt: "2024-01-01",
 };
 
+const defaultStorefront: StorefrontSettings = {
+  isPublished: false,
+  storeSlug: "my-store",
+  navbar: {
+    logoUrl: "/logo.png",
+    showCart: true,
+  },
+  hero: {
+    backgroundType: "gradient",
+    gradientFrom: "#4f46e5",
+    gradientTo: "#7c3aed",
+    gradientDirection: "to right",
+    backgroundImage: "",
+    headline: "Welcome to My Store",
+    subheadline: "Discover amazing digital products crafted just for you",
+    textColor: "#ffffff",
+  },
+  productsOnStorefront: ["prod_1", "prod_2", "prod_3", "prod_4", "prod_5", "prod_6"],
+  testimonials: [],
+  footer: {
+    storeName: "My Store",
+    description: "Your one-stop shop for premium digital products",
+    supportEmail: "support@sublime.io",
+    socialLinks: {},
+    copyrightText: "© 2024 My Store. Powered by Sublime.",
+  },
+  updatedAt: new Date().toISOString(),
+};
+
 // Initialize store with default data
 function getDefaultStore(): StoreData {
   return {
@@ -200,6 +280,7 @@ function getDefaultStore(): StoreData {
     orders: defaultOrders,
     stats: defaultStats,
     chartData: defaultChartData,
+    storefront: defaultStorefront,
     isAuthenticated: true,
     hasCompletedOnboarding: false,
   };
@@ -219,7 +300,42 @@ export const storage = {
     }
     
     try {
-      return JSON.parse(stored) as StoreData;
+      const parsed = JSON.parse(stored) as Partial<StoreData>;
+      const defaults = getDefaultStore();
+      
+      // Merge with defaults to ensure all properties exist
+      const merged: StoreData = {
+        ...defaults,
+        ...parsed,
+        // Ensure nested objects are properly merged
+        storefront: {
+          ...defaults.storefront,
+          ...(parsed.storefront || {}),
+          navbar: {
+            ...defaults.storefront.navbar,
+            ...(parsed.storefront?.navbar || {}),
+          },
+          hero: {
+            ...defaults.storefront.hero,
+            ...(parsed.storefront?.hero || {}),
+          },
+          footer: {
+            ...defaults.storefront.footer,
+            ...(parsed.storefront?.footer || {}),
+          },
+        },
+        stats: {
+          ...defaults.stats,
+          ...(parsed.stats || {}),
+        },
+      };
+      
+      // Save merged data back if storefront was missing
+      if (!parsed.storefront) {
+        this.setStore(merged);
+      }
+      
+      return merged;
     } catch {
       return getDefaultStore();
     }
@@ -365,6 +481,97 @@ export const storage = {
   // Chart data methods
   getChartData(): ChartDataPoint[] {
     return this.getStore().chartData;
+  },
+
+  // Storefront methods
+  getStorefront(): StorefrontSettings {
+    return this.getStore().storefront;
+  },
+
+  updateStorefront(settings: Partial<StorefrontSettings>): StorefrontSettings {
+    const store = this.getStore();
+    store.storefront = { 
+      ...store.storefront, 
+      ...settings, 
+      updatedAt: new Date().toISOString() 
+    };
+    this.setStore(store);
+    return store.storefront;
+  },
+
+  updateStorefrontNavbar(navbar: Partial<StorefrontNavbar>): void {
+    const store = this.getStore();
+    store.storefront.navbar = { ...store.storefront.navbar, ...navbar };
+    store.storefront.updatedAt = new Date().toISOString();
+    this.setStore(store);
+  },
+
+  updateStorefrontHero(hero: Partial<StorefrontHero>): void {
+    const store = this.getStore();
+    store.storefront.hero = { ...store.storefront.hero, ...hero };
+    store.storefront.updatedAt = new Date().toISOString();
+    this.setStore(store);
+  },
+
+  updateStorefrontFooter(footer: Partial<StorefrontFooter>): void {
+    const store = this.getStore();
+    store.storefront.footer = { ...store.storefront.footer, ...footer };
+    store.storefront.updatedAt = new Date().toISOString();
+    this.setStore(store);
+  },
+
+  addProductToStorefront(productId: string): void {
+    const store = this.getStore();
+    if (!store.storefront.productsOnStorefront.includes(productId)) {
+      store.storefront.productsOnStorefront.push(productId);
+      store.storefront.updatedAt = new Date().toISOString();
+      this.setStore(store);
+    }
+  },
+
+  removeProductFromStorefront(productId: string): void {
+    const store = this.getStore();
+    store.storefront.productsOnStorefront = store.storefront.productsOnStorefront.filter(
+      (id) => id !== productId
+    );
+    store.storefront.updatedAt = new Date().toISOString();
+    this.setStore(store);
+  },
+
+  addTestimonial(testimonial: Omit<StorefrontTestimonial, "id" | "createdAt">): StorefrontTestimonial {
+    const store = this.getStore();
+    const newTestimonial: StorefrontTestimonial = {
+      ...testimonial,
+      id: `testimonial_${Date.now()}`,
+      createdAt: new Date().toISOString(),
+    };
+    store.storefront.testimonials.push(newTestimonial);
+    store.storefront.updatedAt = new Date().toISOString();
+    this.setStore(store);
+    return newTestimonial;
+  },
+
+  removeTestimonial(testimonialId: string): void {
+    const store = this.getStore();
+    store.storefront.testimonials = store.storefront.testimonials.filter(
+      (t) => t.id !== testimonialId
+    );
+    store.storefront.updatedAt = new Date().toISOString();
+    this.setStore(store);
+  },
+
+  publishStorefront(): void {
+    const store = this.getStore();
+    store.storefront.isPublished = true;
+    store.storefront.updatedAt = new Date().toISOString();
+    this.setStore(store);
+  },
+
+  unpublishStorefront(): void {
+    const store = this.getStore();
+    store.storefront.isPublished = false;
+    store.storefront.updatedAt = new Date().toISOString();
+    this.setStore(store);
   },
 
   // Reset to default data
