@@ -41,6 +41,12 @@ export default function NewDigitalProductPage() {
   const [systemRequirements, setSystemRequirements] = useState<string[]>([]);
   const [newRequirement, setNewRequirement] = useState("");
 
+  // Product File
+  const [productFile, setProductFile] = useState<string>("");
+  const [productFileName, setProductFileName] = useState<string>("");
+  const [productFileSize, setProductFileSize] = useState<string>("");
+  const [isUploadingFile, setIsUploadingFile] = useState(false);
+
   const [status, setStatus] = useState<"published" | "draft">("draft");
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -56,6 +62,45 @@ export default function NewDigitalProductPage() {
       };
       reader.readAsDataURL(file);
     }
+  };
+
+  const handleProductFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Max file size 500MB for digital products
+      if (file.size > 500 * 1024 * 1024) {
+        alert("File must be less than 500MB");
+        return;
+      }
+      setIsUploadingFile(true);
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setProductFile(event.target?.result as string);
+        setProductFileName(file.name);
+        // Format file size
+        const sizeInMB = file.size / (1024 * 1024);
+        if (sizeInMB >= 1) {
+          setProductFileSize(`${sizeInMB.toFixed(2)} MB`);
+          setFileSize(`${sizeInMB.toFixed(2)} MB`);
+        } else {
+          const sizeInKB = file.size / 1024;
+          setProductFileSize(`${sizeInKB.toFixed(2)} KB`);
+          setFileSize(`${sizeInKB.toFixed(2)} KB`);
+        }
+        setIsUploadingFile(false);
+      };
+      reader.onerror = () => {
+        alert("Error reading file");
+        setIsUploadingFile(false);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeProductFile = () => {
+    setProductFile("");
+    setProductFileName("");
+    setProductFileSize("");
   };
 
   const addContent = () => {
@@ -91,6 +136,8 @@ export default function NewDigitalProductPage() {
     const digitalDetails: DigitalDetails = {
       fileType,
       fileSize: fileSize || undefined,
+      fileUrl: productFile || undefined,
+      fileName: productFileName || undefined,
       downloadLimit,
       deliveryMethod,
       contents: contents.length > 0 ? contents : undefined,
@@ -349,6 +396,65 @@ export default function NewDigitalProductPage() {
               </select>
             </div>
           </div>
+        </div>
+
+        {/* Product File Upload */}
+        <div className="space-y-4">
+          <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+            <Upload className="w-5 h-5 text-gray-400" />
+            Product File <span className="text-red-500">*</span>
+          </h2>
+          <p className="text-sm text-gray-500">Upload the actual file customers will receive after purchase</p>
+
+          {productFile ? (
+            <div className="p-4 bg-blue-50 rounded-xl border border-blue-200">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                    <File className="w-6 h-6 text-blue-600" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-900">{productFileName}</p>
+                    <p className="text-sm text-gray-500">{productFileSize}</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={removeProductFile}
+                  className="p-2 text-red-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                >
+                  <Trash2 className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+          ) : (
+            <label className={`flex flex-col items-center justify-center w-full h-40 border-2 border-dashed rounded-xl cursor-pointer transition-colors ${
+              isUploadingFile 
+                ? "border-blue-400 bg-blue-50" 
+                : "border-gray-300 hover:border-blue-500 hover:bg-blue-50/50"
+            }`}>
+              {isUploadingFile ? (
+                <>
+                  <Loader2 className="w-8 h-8 text-blue-500 animate-spin mb-2" />
+                  <span className="text-sm text-blue-600 font-medium">Uploading...</span>
+                </>
+              ) : (
+                <>
+                  <Upload className="w-8 h-8 text-gray-400 mb-2" />
+                  <span className="text-sm text-gray-500">
+                    <span className="font-medium text-blue-600">Click to upload</span> your product file
+                  </span>
+                  <span className="text-xs text-gray-400 mt-1">Max 500MB • PDF, ZIP, MP3, and more</span>
+                </>
+              )}
+              <input
+                type="file"
+                className="hidden"
+                onChange={handleProductFileUpload}
+                disabled={isUploadingFile}
+              />
+            </label>
+          )}
         </div>
 
         {/* Delivery */}

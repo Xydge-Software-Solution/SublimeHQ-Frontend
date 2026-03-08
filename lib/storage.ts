@@ -74,7 +74,10 @@ export interface EventDetails {
 export interface VideoDetails {
   duration?: string;
   previewUrl?: string;
-  videoUrl?: string;
+  videoUrl?: string; // Hosted URL (YouTube, Vimeo, etc.)
+  videoFileUrl?: string; // Direct video file upload
+  videoFileName?: string;
+  videoFileSize?: string;
   format?: string;
   resolution?: string;
   chapters?: { title: string; startTime: string; description?: string }[];
@@ -138,6 +141,8 @@ export interface MembershipDetails {
 export interface DigitalDetails {
   fileType: string;
   fileSize?: string;
+  fileUrl?: string; // The actual downloadable product file
+  fileName?: string;
   downloadLimit?: number;
   deliveryMethod: "instant" | "email";
   contents?: string[];
@@ -261,6 +266,91 @@ export interface Cart {
   updatedAt: string;
 }
 
+// Payout types
+export type PayoutProvider = "stripe" | "paystack" | "none";
+
+export interface PayoutSettings {
+  provider: PayoutProvider;
+  stripeAccountId?: string;
+  stripeConnected: boolean;
+  paystackAccountId?: string;
+  paystackConnected: boolean;
+  bankName?: string;
+  accountNumber?: string;
+  routingNumber?: string;
+  payoutSchedule: "daily" | "weekly" | "monthly";
+  minimumPayout: number;
+  currency: string;
+}
+
+export interface Payout {
+  id: string;
+  amount: number;
+  currency: string;
+  status: "pending" | "processing" | "completed" | "failed";
+  provider: PayoutProvider;
+  createdAt: string;
+  completedAt?: string;
+  reference?: string;
+}
+
+// Account types
+export interface AccountVerification {
+  idType: "passport" | "national_id" | "drivers_license";
+  idNumber: string;
+  idImageUrl?: string;
+  idImageName?: string;
+  verificationStatus: "unverified" | "pending" | "verified" | "rejected";
+  submittedAt?: string;
+  verifiedAt?: string;
+}
+
+export interface AccountSettings {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone?: string;
+  avatar?: string;
+  timezone: string;
+  language: string;
+  country: string;
+  address?: {
+    street: string;
+    city: string;
+    state: string;
+    postalCode: string;
+    country: string;
+  };
+  verification?: AccountVerification;
+}
+
+// App Settings types
+export interface AppSettings {
+  notifications: {
+    emailOrders: boolean;
+    emailMarketing: boolean;
+    emailPayouts: boolean;
+    pushOrders: boolean;
+    pushMarketing: boolean;
+  };
+  privacy: {
+    publicProfile: boolean;
+    showEarnings: boolean;
+    allowAnalytics: boolean;
+  };
+  security: {
+    twoFactorEnabled: boolean;
+    loginNotifications: boolean;
+    sessionTimeout: number; // minutes
+  };
+  display: {
+    theme: "light" | "dark" | "system";
+    compactMode: boolean;
+    currency: string;
+    dateFormat: string;
+  };
+}
+
 export interface StoreData {
   user: UserData | null;
   onboarding: OnboardingData | null;
@@ -270,6 +360,10 @@ export interface StoreData {
   chartData: ChartDataPoint[];
   storefront: StorefrontSettings;
   cart: Cart;
+  payoutSettings: PayoutSettings;
+  payouts: Payout[];
+  accountSettings: AccountSettings | null;
+  appSettings: AppSettings;
   isAuthenticated: boolean;
   hasCompletedOnboarding: boolean;
 }
@@ -437,6 +531,49 @@ const defaultCart: Cart = {
   updatedAt: new Date().toISOString(),
 };
 
+const defaultPayoutSettings: PayoutSettings = {
+  provider: "none",
+  stripeConnected: false,
+  paystackConnected: false,
+  payoutSchedule: "weekly",
+  minimumPayout: 100,
+  currency: "USD",
+};
+
+const defaultPayouts: Payout[] = [
+  { id: "pay_1", amount: 1250.00, currency: "USD", status: "completed", provider: "stripe", createdAt: "2024-03-01", completedAt: "2024-03-02", reference: "po_abc123" },
+  { id: "pay_2", amount: 890.50, currency: "USD", status: "completed", provider: "stripe", createdAt: "2024-02-15", completedAt: "2024-02-16", reference: "po_def456" },
+  { id: "pay_3", amount: 2100.00, currency: "USD", status: "processing", provider: "stripe", createdAt: "2024-03-08", reference: "po_ghi789" },
+  { id: "pay_4", amount: 750.25, currency: "USD", status: "completed", provider: "stripe", createdAt: "2024-02-01", completedAt: "2024-02-02", reference: "po_jkl012" },
+  { id: "pay_5", amount: 1500.00, currency: "USD", status: "pending", provider: "stripe", createdAt: "2024-03-10" },
+];
+
+const defaultAppSettings: AppSettings = {
+  notifications: {
+    emailOrders: true,
+    emailMarketing: false,
+    emailPayouts: true,
+    pushOrders: true,
+    pushMarketing: false,
+  },
+  privacy: {
+    publicProfile: true,
+    showEarnings: false,
+    allowAnalytics: true,
+  },
+  security: {
+    twoFactorEnabled: false,
+    loginNotifications: true,
+    sessionTimeout: 30,
+  },
+  display: {
+    theme: "light",
+    compactMode: false,
+    currency: "USD",
+    dateFormat: "MM/DD/YYYY",
+  },
+};
+
 // Initialize store with default data
 function getDefaultStore(): StoreData {
   return {
@@ -448,6 +585,10 @@ function getDefaultStore(): StoreData {
     chartData: defaultChartData,
     storefront: defaultStorefront,
     cart: defaultCart,
+    payoutSettings: defaultPayoutSettings,
+    payouts: defaultPayouts,
+    accountSettings: null,
+    appSettings: defaultAppSettings,
     isAuthenticated: true,
     hasCompletedOnboarding: false,
   };
@@ -828,6 +969,132 @@ export const storage = {
     const store = this.getStore();
     store.cart.items = [];
     store.cart.updatedAt = new Date().toISOString();
+    this.setStore(store);
+  },
+
+  // Payout methods
+  getPayoutSettings(): PayoutSettings {
+    return this.getStore().payoutSettings;
+  },
+
+  updatePayoutSettings(settings: Partial<PayoutSettings>): PayoutSettings {
+    const store = this.getStore();
+    store.payoutSettings = { ...store.payoutSettings, ...settings };
+    this.setStore(store);
+    return store.payoutSettings;
+  },
+
+  connectStripe(accountId: string): void {
+    const store = this.getStore();
+    store.payoutSettings.stripeAccountId = accountId;
+    store.payoutSettings.stripeConnected = true;
+    store.payoutSettings.provider = "stripe";
+    this.setStore(store);
+  },
+
+  disconnectStripe(): void {
+    const store = this.getStore();
+    store.payoutSettings.stripeAccountId = undefined;
+    store.payoutSettings.stripeConnected = false;
+    if (store.payoutSettings.provider === "stripe") {
+      store.payoutSettings.provider = "none";
+    }
+    this.setStore(store);
+  },
+
+  connectPaystack(accountId: string): void {
+    const store = this.getStore();
+    store.payoutSettings.paystackAccountId = accountId;
+    store.payoutSettings.paystackConnected = true;
+    store.payoutSettings.provider = "paystack";
+    this.setStore(store);
+  },
+
+  disconnectPaystack(): void {
+    const store = this.getStore();
+    store.payoutSettings.paystackAccountId = undefined;
+    store.payoutSettings.paystackConnected = false;
+    if (store.payoutSettings.provider === "paystack") {
+      store.payoutSettings.provider = "none";
+    }
+    this.setStore(store);
+  },
+
+  getPayouts(): Payout[] {
+    return this.getStore().payouts;
+  },
+
+  addPayout(payout: Omit<Payout, "id" | "createdAt">): Payout {
+    const store = this.getStore();
+    const newPayout: Payout = {
+      ...payout,
+      id: `pay_${Date.now()}`,
+      createdAt: new Date().toISOString().split("T")[0],
+    };
+    store.payouts.unshift(newPayout);
+    this.setStore(store);
+    return newPayout;
+  },
+
+  // Account methods
+  getAccountSettings(): AccountSettings | null {
+    return this.getStore().accountSettings;
+  },
+
+  updateAccountSettings(settings: Partial<AccountSettings>): AccountSettings {
+    const store = this.getStore();
+    store.accountSettings = { 
+      ...store.accountSettings, 
+      ...settings 
+    } as AccountSettings;
+    this.setStore(store);
+    return store.accountSettings;
+  },
+
+  updateAccountVerification(verification: Partial<AccountVerification>): void {
+    const store = this.getStore();
+    if (store.accountSettings) {
+      store.accountSettings.verification = {
+        ...store.accountSettings.verification,
+        ...verification,
+      } as AccountVerification;
+      this.setStore(store);
+    }
+  },
+
+  // App Settings methods
+  getAppSettings(): AppSettings {
+    return this.getStore().appSettings;
+  },
+
+  updateAppSettings(settings: Partial<AppSettings>): AppSettings {
+    const store = this.getStore();
+    store.appSettings = { ...store.appSettings, ...settings };
+    this.setStore(store);
+    return store.appSettings;
+  },
+
+  updateNotificationSettings(settings: Partial<AppSettings["notifications"]>): void {
+    const store = this.getStore();
+    store.appSettings.notifications = { ...store.appSettings.notifications, ...settings };
+    this.setStore(store);
+  },
+
+  updatePrivacySettings(settings: Partial<AppSettings["privacy"]>): void {
+    const store = this.getStore();
+    store.appSettings.privacy = { ...store.appSettings.privacy, ...settings };
+    this.setStore(store);
+  },
+
+  updateSecuritySettings(settings: Partial<AppSettings["security"]>): void {
+    const store = this.getStore();
+    store.appSettings.security = { ...store.appSettings.security, ...settings };
+    this.setStore(store);
+  },
+
+  updateDisplaySettings(settings: Partial<AppSettings["display"]>): void {
+    const store = this.getStore();
+    store.appSettings.display = { ...store.appSettings.display, ...settings };
     this.setStore(store);
   },
 

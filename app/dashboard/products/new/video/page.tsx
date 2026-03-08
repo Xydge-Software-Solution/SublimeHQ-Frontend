@@ -14,6 +14,7 @@ import {
   Play,
   Clock,
   Film,
+  FileVideo,
 } from "lucide-react";
 import { storage, type Product, type VideoDetails } from "@/lib/storage";
 
@@ -45,6 +46,12 @@ export default function NewVideoProductPage() {
   const [videoUrl, setVideoUrl] = useState("");
   const [hostingPlatform, setHostingPlatform] = useState("");
 
+  // Video File Upload
+  const [videoFile, setVideoFile] = useState<string>("");
+  const [videoFileName, setVideoFileName] = useState<string>("");
+  const [videoFileSize, setVideoFileSize] = useState<string>("");
+  const [isUploadingVideo, setIsUploadingVideo] = useState(false);
+
   // Chapters
   const [chapters, setChapters] = useState<Chapter[]>([]);
   const [newChapter, setNewChapter] = useState<Omit<Chapter, "id">>({
@@ -73,6 +80,43 @@ export default function NewVideoProductPage() {
       };
       reader.readAsDataURL(file);
     }
+  };
+
+  const handleVideoFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Max file size 2GB for video files
+      if (file.size > 2 * 1024 * 1024 * 1024) {
+        alert("Video file must be less than 2GB");
+        return;
+      }
+      setIsUploadingVideo(true);
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setVideoFile(event.target?.result as string);
+        setVideoFileName(file.name);
+        // Format file size
+        const sizeInGB = file.size / (1024 * 1024 * 1024);
+        if (sizeInGB >= 1) {
+          setVideoFileSize(`${sizeInGB.toFixed(2)} GB`);
+        } else {
+          const sizeInMB = file.size / (1024 * 1024);
+          setVideoFileSize(`${sizeInMB.toFixed(2)} MB`);
+        }
+        setIsUploadingVideo(false);
+      };
+      reader.onerror = () => {
+        alert("Error reading video file");
+        setIsUploadingVideo(false);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeVideoFile = () => {
+    setVideoFile("");
+    setVideoFileName("");
+    setVideoFileSize("");
   };
 
   const addChapter = () => {
@@ -109,6 +153,9 @@ export default function NewVideoProductPage() {
       duration: duration || undefined,
       previewUrl: previewUrl || undefined,
       videoUrl: videoUrl || undefined,
+      videoFileUrl: videoFile || undefined,
+      videoFileName: videoFileName || undefined,
+      videoFileSize: videoFileSize || undefined,
       format: format || undefined,
       chapters: chapters.length > 0 ? chapters.map((c) => ({
         title: c.title,
@@ -395,6 +442,87 @@ export default function NewVideoProductPage() {
                 <option value="other">Other</option>
               </select>
             </div>
+          </div>
+        </div>
+
+        {/* Video File Upload */}
+        <div className="space-y-4">
+          <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+            <FileVideo className="w-5 h-5 text-gray-400" />
+            Video File <span className="text-red-500">*</span>
+          </h2>
+          <p className="text-sm text-gray-500">Upload your video file or provide a hosted URL below</p>
+
+          {videoFile ? (
+            <div className="p-4 bg-red-50 rounded-xl border border-red-200">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
+                    <Play className="w-6 h-6 text-red-600" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-900">{videoFileName}</p>
+                    <p className="text-sm text-gray-500">{videoFileSize}</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={removeVideoFile}
+                  className="p-2 text-red-500 hover:text-red-600 hover:bg-red-100 rounded-lg transition-colors"
+                >
+                  <Trash2 className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+          ) : (
+            <label className={`flex flex-col items-center justify-center w-full h-44 border-2 border-dashed rounded-xl cursor-pointer transition-colors ${
+              isUploadingVideo 
+                ? "border-red-400 bg-red-50" 
+                : "border-gray-300 hover:border-red-500 hover:bg-red-50/50"
+            }`}>
+              {isUploadingVideo ? (
+                <>
+                  <Loader2 className="w-8 h-8 text-red-500 animate-spin mb-2" />
+                  <span className="text-sm text-red-600 font-medium">Uploading video...</span>
+                </>
+              ) : (
+                <>
+                  <Upload className="w-8 h-8 text-gray-400 mb-2" />
+                  <span className="text-sm text-gray-500">
+                    <span className="font-medium text-red-600">Click to upload</span> your video file
+                  </span>
+                  <span className="text-xs text-gray-400 mt-1">Max 2GB • MP4, MOV, AVI, WebM</span>
+                </>
+              )}
+              <input
+                type="file"
+                accept="video/mp4,video/mov,video/avi,video/webm,video/*"
+                className="hidden"
+                onChange={handleVideoFileUpload}
+                disabled={isUploadingVideo}
+              />
+            </label>
+          )}
+
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-200"></div>
+            </div>
+            <div className="relative flex justify-center">
+              <span className="bg-white px-3 text-sm text-gray-500">or provide a hosted URL</span>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Hosted Video URL</label>
+            <input
+              type="url"
+              value={videoUrl}
+              onChange={(e) => setVideoUrl(e.target.value)}
+              placeholder="https://vimeo.com/123456789 or your video URL"
+              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent"
+            />
+            <p className="mt-1 text-xs text-gray-500">Full video URL from Vimeo, Wistia, or your hosting provider</p>
           </div>
         </div>
 
