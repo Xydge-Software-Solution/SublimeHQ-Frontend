@@ -2,8 +2,9 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { Plus, Search, Filter, Star, MoreVertical, Edit2, Trash2, Eye } from "lucide-react";
+import { Plus, Search, Filter, Star, MoreVertical, Edit2, Trash2, Eye, Send, ExternalLink } from "lucide-react";
 import { storage, type Product } from "@/lib/storage";
 
 function StarRating({ rating }: { rating: number }) {
@@ -32,6 +33,8 @@ function StarRating({ rating }: { rating: number }) {
 }
 
 export default function ProductsPage() {
+  const router = useRouter();
+  
   // Initialize products from localStorage
   const initialProducts = useMemo(() => {
     if (typeof window === "undefined") return [];
@@ -56,6 +59,30 @@ export default function ProductsPage() {
       setProducts(products.filter(p => p.id !== id));
     }
     setOpenMenuId(null);
+  };
+
+  const handlePublish = (id: string) => {
+    const product = products.find(p => p.id === id);
+    if (product) {
+      const updatedProduct = { ...product, status: "published" as const };
+      storage.updateProduct(id, updatedProduct);
+      setProducts(products.map(p => p.id === id ? updatedProduct : p));
+    }
+    setOpenMenuId(null);
+  };
+
+  const handleEdit = (id: string) => {
+    setOpenMenuId(null);
+    router.push(`/dashboard/products/${id}/edit`);
+  };
+
+  const handleView = (id: string) => {
+    setOpenMenuId(null);
+    // Get storefront settings for the slug
+    const storefront = storage.getStorefront();
+    const slug = storefront?.storeSlug || 'store';
+    // Navigate to the public storefront product page
+    window.open(`/store/${slug}/product/${id}`, '_blank');
   };
 
   return (
@@ -168,14 +195,29 @@ export default function ProductsPage() {
                   </button>
                   {openMenuId === product.id && (
                     <div className="absolute bottom-full right-0 mb-2 bg-white rounded-xl shadow-xl border border-gray-100 py-1 min-w-[140px] z-10">
-                      <button className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
-                        <Eye className="w-4 h-4" />
+                      <button
+                        onClick={() => handleView(product.id)}
+                        className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                      >
+                        <ExternalLink className="w-4 h-4" />
                         View
                       </button>
-                      <button className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                      <button
+                        onClick={() => handleEdit(product.id)}
+                        className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                      >
                         <Edit2 className="w-4 h-4" />
                         Edit
                       </button>
+                      {product.status === "draft" && (
+                        <button
+                          onClick={() => handlePublish(product.id)}
+                          className="w-full flex items-center gap-2 px-4 py-2 text-sm text-green-600 hover:bg-green-50"
+                        >
+                          <Send className="w-4 h-4" />
+                          Publish
+                        </button>
+                      )}
                       <button
                         onClick={() => handleDelete(product.id)}
                         className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50"
