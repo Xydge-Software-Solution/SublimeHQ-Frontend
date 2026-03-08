@@ -93,17 +93,23 @@ export default function StorefrontPage() {
     
     const isOnStorefront = settings.productsOnStorefront.includes(productId);
     
+    let newProductsOnStorefront: string[];
     if (isOnStorefront) {
-      setSettings({
-        ...settings,
-        productsOnStorefront: settings.productsOnStorefront.filter((id) => id !== productId),
-      });
+      newProductsOnStorefront = settings.productsOnStorefront.filter((id) => id !== productId);
     } else {
-      setSettings({
-        ...settings,
-        productsOnStorefront: [...settings.productsOnStorefront, productId],
-      });
+      newProductsOnStorefront = [...settings.productsOnStorefront, productId];
     }
+    
+    const updatedSettings = {
+      ...settings,
+      productsOnStorefront: newProductsOnStorefront,
+    };
+    
+    // Update local state
+    setSettings(updatedSettings);
+    
+    // Also save to localStorage immediately so changes persist
+    storage.updateStorefront(updatedSettings);
   };
 
   const storefrontProducts = useMemo(() => {

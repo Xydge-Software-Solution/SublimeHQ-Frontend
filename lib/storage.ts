@@ -18,17 +18,158 @@ export interface OnboardingData {
   completedAt?: string;
 }
 
+export type ProductType = "digital" | "event" | "video" | "coaching" | "course" | "membership";
+
+// Event-specific fields
+export interface EventDetails {
+  eventType: "in-person" | "virtual" | "hybrid";
+  startDate: string;
+  endDate?: string;
+  startTime: string;
+  endTime?: string;
+  timezone: string;
+  venue?: {
+    name: string;
+    address: string;
+    city: string;
+    state: string;
+    country: string;
+    zipCode: string;
+    googleMapsUrl?: string;
+  };
+  virtualLink?: string;
+  virtualPlatform?: "zoom" | "google-meet" | "teams" | "custom";
+  maxAttendees?: number;
+  currentAttendees: number;
+  ticketTypes: {
+    id: string;
+    name: string;
+    price: number;
+    description?: string;
+    maxQuantity?: number;
+    soldCount: number;
+    benefits?: string[];
+  }[];
+  agenda?: {
+    time: string;
+    title: string;
+    description?: string;
+    speaker?: string;
+  }[];
+  speakers?: {
+    name: string;
+    title: string;
+    bio?: string;
+    image?: string;
+    socialLinks?: { platform: string; url: string }[];
+  }[];
+  faqs?: { question: string; answer: string }[];
+  refundPolicy?: string;
+  ageRestriction?: string;
+  dressCode?: string;
+  accessibilityInfo?: string;
+}
+
+// Video-specific fields
+export interface VideoDetails {
+  duration?: string;
+  previewUrl?: string;
+  videoUrl?: string;
+  format?: string;
+  resolution?: string;
+  chapters?: { title: string; startTime: string; description?: string }[];
+  subtitles?: string[];
+}
+
+// Coaching-specific fields
+export interface CoachingDetails {
+  sessionDuration: number; // in minutes
+  sessionType: "one-on-one" | "group";
+  maxGroupSize?: number;
+  deliveryMethod?: string[];
+  platform?: string;
+  availability?: { day: string; startTime: string; endTime: string }[];
+  timezone?: string;
+  bookingNotice?: number; // hours in advance
+  cancellationPolicy?: string;
+  includedSessions?: number;
+  whatToExpect?: string[];
+  requirements?: string[];
+}
+
+// Course-specific fields
+export interface CourseDetails {
+  totalDuration?: string;
+  totalLessons?: number;
+  totalModules?: number;
+  skillLevel?: "beginner" | "intermediate" | "advanced" | "all-levels";
+  modules?: {
+    title: string;
+    description?: string;
+    order?: number;
+    lessons: {
+      title: string;
+      duration?: string;
+      type: "video" | "text" | "quiz" | "download";
+      order?: number;
+      isFree?: boolean;
+    }[];
+  }[];
+  certificate?: boolean;
+  instructor?: string;
+  lifetime?: boolean;
+  supportIncluded?: boolean;
+  requirements?: string[];
+  whatYouWillLearn?: string[];
+}
+
+// Membership-specific fields
+export interface MembershipDetails {
+  billingPeriod: "monthly" | "yearly" | "one-time";
+  trialDays?: number;
+  benefits?: string[];
+  accessLevel?: string;
+  exclusiveContent?: boolean;
+  communityAccess?: boolean;
+  discountPercentage?: number;
+}
+
+// Digital product-specific fields
+export interface DigitalDetails {
+  fileType: string;
+  fileSize?: string;
+  downloadLimit?: number;
+  deliveryMethod: "instant" | "email";
+  contents?: string[];
+  systemRequirements?: string[];
+  version?: string;
+  updates?: "lifetime" | "limited" | "none";
+}
+
 export interface Product {
   id: string;
+  type: ProductType;
   title: string;
   description: string;
+  shortDescription?: string;
   price: number;
+  compareAtPrice?: number;
   image: string;
+  gallery?: string[];
   rating: number;
   reviewCount: number;
   status: "published" | "draft";
   createdAt: string;
   sales: number;
+  category?: string;
+  tags?: string[];
+  // Type-specific details
+  digitalDetails?: DigitalDetails;
+  eventDetails?: EventDetails;
+  videoDetails?: VideoDetails;
+  coachingDetails?: CoachingDetails;
+  courseDetails?: CourseDetails;
+  membershipDetails?: MembershipDetails;
 }
 
 export interface Order {
@@ -139,6 +280,7 @@ const STORAGE_KEY = "sublime_store_data";
 const defaultProducts: Product[] = [
   {
     id: "prod_1",
+    type: "course",
     title: "Digital Marketing Masterclass",
     description: "Learn proven strategies to grow your business online with social media, SEO, and paid advertising.",
     price: 49.99,
@@ -151,6 +293,7 @@ const defaultProducts: Product[] = [
   },
   {
     id: "prod_2",
+    type: "digital",
     title: "E-book Bundle: Content Creation",
     description: "5 comprehensive e-books covering writing, design, video production, and content strategy.",
     price: 29.99,
@@ -163,6 +306,7 @@ const defaultProducts: Product[] = [
   },
   {
     id: "prod_3",
+    type: "coaching",
     title: "1-on-1 Business Coaching",
     description: "Personalized coaching sessions to help you launch and scale your online business.",
     price: 199.00,
@@ -175,6 +319,7 @@ const defaultProducts: Product[] = [
   },
   {
     id: "prod_4",
+    type: "digital",
     title: "Premium Design Templates",
     description: "50+ professionally designed templates for social media, presentations, and marketing materials.",
     price: 19.99,
@@ -187,6 +332,7 @@ const defaultProducts: Product[] = [
   },
   {
     id: "prod_5",
+    type: "video",
     title: "Video Editing Course",
     description: "Master video editing with step-by-step tutorials using industry-standard software.",
     price: 79.99,
@@ -199,6 +345,7 @@ const defaultProducts: Product[] = [
   },
   {
     id: "prod_6",
+    type: "digital",
     title: "Email Marketing Toolkit",
     description: "Complete toolkit with 30 email templates, automation guides, and copywriting tips.",
     price: 39.99,
