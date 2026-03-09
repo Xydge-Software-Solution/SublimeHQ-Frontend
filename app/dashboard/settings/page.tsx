@@ -61,22 +61,17 @@ export default function SettingsPage() {
   const [showSavedMessage, setShowSavedMessage] = useState(false);
   const [activeTab, setActiveTab] = useState<"notifications" | "privacy" | "security" | "display">("notifications");
 
-  // Notification settings
-  const [emailNewOrder, setEmailNewOrder] = useState(true);
-  const [emailPayoutComplete, setEmailPayoutComplete] = useState(true);
-  const [emailLowStock, setEmailLowStock] = useState(true);
+  // Notification settings (matching AppSettings interface)
+  const [emailOrders, setEmailOrders] = useState(true);
+  const [emailPayouts, setEmailPayouts] = useState(true);
   const [emailMarketing, setEmailMarketing] = useState(false);
-  const [pushNewOrder, setPushNewOrder] = useState(true);
-  const [pushPayoutComplete, setPushPayoutComplete] = useState(false);
-  const [pushLowStock, setPushLowStock] = useState(true);
+  const [pushOrders, setPushOrders] = useState(true);
   const [pushMarketing, setPushMarketing] = useState(false);
 
-  // Privacy settings
+  // Privacy settings (matching AppSettings interface)
   const [publicProfile, setPublicProfile] = useState(true);
   const [showEarnings, setShowEarnings] = useState(false);
-  const [showProductCount, setShowProductCount] = useState(true);
   const [allowAnalytics, setAllowAnalytics] = useState(true);
-  const [shareDataWithPartners, setShareDataWithPartners] = useState(false);
 
   // Security settings
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
@@ -96,13 +91,10 @@ export default function SettingsPage() {
       if (settings) {
         // Notification settings
         if (settings.notifications) {
-          setEmailNewOrder(settings.notifications.emailNewOrder ?? true);
-          setEmailPayoutComplete(settings.notifications.emailPayoutComplete ?? true);
-          setEmailLowStock(settings.notifications.emailLowStock ?? true);
+          setEmailOrders(settings.notifications.emailOrders ?? true);
+          setEmailPayouts(settings.notifications.emailPayouts ?? true);
           setEmailMarketing(settings.notifications.emailMarketing ?? false);
-          setPushNewOrder(settings.notifications.pushNewOrder ?? true);
-          setPushPayoutComplete(settings.notifications.pushPayoutComplete ?? false);
-          setPushLowStock(settings.notifications.pushLowStock ?? true);
+          setPushOrders(settings.notifications.pushOrders ?? true);
           setPushMarketing(settings.notifications.pushMarketing ?? false);
         }
 
@@ -110,9 +102,7 @@ export default function SettingsPage() {
         if (settings.privacy) {
           setPublicProfile(settings.privacy.publicProfile ?? true);
           setShowEarnings(settings.privacy.showEarnings ?? false);
-          setShowProductCount(settings.privacy.showProductCount ?? true);
           setAllowAnalytics(settings.privacy.allowAnalytics ?? true);
-          setShareDataWithPartners(settings.privacy.shareDataWithPartners ?? false);
         }
 
         // Security settings
@@ -142,21 +132,16 @@ export default function SettingsPage() {
 
     const appSettings: AppSettings = {
       notifications: {
-        emailNewOrder,
-        emailPayoutComplete,
-        emailLowStock,
+        emailOrders,
+        emailPayouts,
         emailMarketing,
-        pushNewOrder,
-        pushPayoutComplete,
-        pushLowStock,
+        pushOrders,
         pushMarketing,
       },
       privacy: {
         publicProfile,
         showEarnings,
-        showProductCount,
         allowAnalytics,
-        shareDataWithPartners,
       },
       security: {
         twoFactorEnabled,
@@ -313,25 +298,18 @@ export default function SettingsPage() {
                 </div>
                 <div className="space-y-1 divide-y divide-gray-100">
                   <ToggleSwitch
-                    enabled={emailNewOrder}
-                    onChange={() => setEmailNewOrder(!emailNewOrder)}
+                    enabled={emailOrders}
+                    onChange={() => setEmailOrders(!emailOrders)}
                     label="New Orders"
                     description="Receive email when you get a new order"
                     icon={ShoppingCart}
                   />
                   <ToggleSwitch
-                    enabled={emailPayoutComplete}
-                    onChange={() => setEmailPayoutComplete(!emailPayoutComplete)}
+                    enabled={emailPayouts}
+                    onChange={() => setEmailPayouts(!emailPayouts)}
                     label="Payout Complete"
                     description="Receive email when a payout is processed"
                     icon={DollarSign}
-                  />
-                  <ToggleSwitch
-                    enabled={emailLowStock}
-                    onChange={() => setEmailLowStock(!emailLowStock)}
-                    label="Low Stock Alert"
-                    description="Receive email when inventory is running low"
-                    icon={AlertCircle}
                   />
                   <ToggleSwitch
                     enabled={emailMarketing}
@@ -351,25 +329,11 @@ export default function SettingsPage() {
                 </div>
                 <div className="space-y-1 divide-y divide-gray-100">
                   <ToggleSwitch
-                    enabled={pushNewOrder}
-                    onChange={() => setPushNewOrder(!pushNewOrder)}
+                    enabled={pushOrders}
+                    onChange={() => setPushOrders(!pushOrders)}
                     label="New Orders"
                     description="Receive push notification for new orders"
                     icon={ShoppingCart}
-                  />
-                  <ToggleSwitch
-                    enabled={pushPayoutComplete}
-                    onChange={() => setPushPayoutComplete(!pushPayoutComplete)}
-                    label="Payout Complete"
-                    description="Receive push notification for completed payouts"
-                    icon={DollarSign}
-                  />
-                  <ToggleSwitch
-                    enabled={pushLowStock}
-                    onChange={() => setPushLowStock(!pushLowStock)}
-                    label="Low Stock Alert"
-                    description="Receive push notification for low inventory"
-                    icon={AlertCircle}
                   />
                   <ToggleSwitch
                     enabled={pushMarketing}
@@ -409,22 +373,10 @@ export default function SettingsPage() {
                   description="Display your total earnings on your public profile"
                 />
                 <ToggleSwitch
-                  enabled={showProductCount}
-                  onChange={() => setShowProductCount(!showProductCount)}
-                  label="Show Product Count"
-                  description="Display the number of products you've sold"
-                />
-                <ToggleSwitch
                   enabled={allowAnalytics}
                   onChange={() => setAllowAnalytics(!allowAnalytics)}
                   label="Allow Analytics"
                   description="Help us improve by sharing anonymous usage data"
-                />
-                <ToggleSwitch
-                  enabled={shareDataWithPartners}
-                  onChange={() => setShareDataWithPartners(!shareDataWithPartners)}
-                  label="Share Data with Partners"
-                  description="Allow sharing data with trusted marketing partners"
                 />
               </div>
 
