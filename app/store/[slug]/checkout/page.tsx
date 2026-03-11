@@ -11,12 +11,26 @@ import {
   Lock,
   Check,
   Loader2,
+  User,
+  LogOut,
+  Users,
+  Plus,
+  Trash2,
+  Mail,
+  Phone,
 } from "lucide-react";
-import { storage, type Product, type StorefrontSettings, type CartItem } from "@/lib/storage";
+import { storage, type Product, type StorefrontSettings, type CartItem, type Customer, type Attendee } from "@/lib/storage";
 
 interface CheckoutItem {
   product: Product;
   quantity: number;
+}
+
+interface AttendeeForm {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
 }
 
 function CheckoutContent() {
@@ -32,21 +46,80 @@ function CheckoutContent() {
   
   const [settings, setSettings] = useState<StorefrontSettings | null>(null);
   const [checkoutItems, setCheckoutItems] = useState<CheckoutItem[]>([]);
+  const [customer, setCustomer] = useState<Customer | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
   
-  // Form state
+  // Form state - pre-fill from customer if authenticated
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [cardNumber, setCardNumber] = useState("");
   const [expiry, setExpiry] = useState("");
   const [cvc, setCvc] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [attendees, setAttendees] = useState<Record<string, AttendeeForm[]>>({});
+
+  // Check if any item is an event type
+  const hasEventProducts = checkoutItems.some(item => item.product.type === "event");
+  
+  // Get total tickets needed for events
+  const getEventTicketCount = (productId: string) => {
+    const item = checkoutItems.find(i => i.product.id === productId);
+    return item?.quantity || 0;
+  };
+
+  // Initialize attendees for event products
+  useEffect(() => {
+    const eventItems = checkoutItems.filter(item => item.product.type === "event");
+    if (eventItems.length > 0) {
+      const newAttendees: Record<string, AttendeeForm[]> = {};
+      eventItems.forEach(item => {
+        // Only initialize if not already set or count changed
+        const existingCount = attendees[item.product.id]?.length || 0;
+        if (existingCount !== item.quantity) {
+          newAttendees[item.product.id] = Array.from({ length: item.quantity }, (_, i) => ({
+            id: `${item.product.id}-${i}`,
+            name: "",
+            email: "",
+            phone: "",
+          }));
+        } else {
+          newAttendees[item.product.id] = attendees[item.product.id];
+        }
+      });
+      setAttendees(newAttendees);
+    }
+  }, [checkoutItems]);
+
+  const updateAttendee = (productId: string, index: number, field: keyof AttendeeForm, value: string) => {
+    setAttendees(prev => ({
+      ...prev,
+      [productId]: prev[productId].map((att, i) => 
+        i === index ? { ...att, [field]: value } : att
+      )
+    }));
+  };
 
   useEffect(() => {
     const storefrontData = storage.getStorefront();
     setSettings(storefrontData);
+    
+    // Check customer authentication
+    const customerAuth = storage.getCustomerAuth();
+    if (!customerAuth.isAuthenticated || !customerAuth.customer) {
+      // Build redirect URL with current checkout params
+      const checkoutUrl = productId 
+        ? `/store/${slug}/checkout?product=${productId}&qty=${directBuyQty}`
+        : `/store/${slug}/checkout`;
+      router.push(`/store/${slug}/login?redirect=${encodeURIComponent(checkoutUrl)}`);
+      return;
+    }
+    
+    // Customer is authenticated
+    setCustomer(customerAuth.customer);
+    setEmail(customerAuth.customer.email);
+    setName(customerAuth.customer.name);
     
     if (productId) {
       // Direct buy - single product
@@ -66,8 +139,7 @@ function CheckoutContent() {
     }
     
     setIsLoading(false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [productId, directBuyQty]);
+  }, [productId, directBuyQty, slug, router]);
 
   const subtotal = checkoutItems.reduce(
     (sum, item) => sum + item.product.price * item.quantity,
@@ -110,6 +182,22 @@ function CheckoutContent() {
       newErrors.cvc = "Invalid CVC";
     }
     
+    // Validate attendees for event products
+    if (hasEventProducts) {
+      Object.entries(attendees).forEach(([productId, productAttendees]) => {
+        productAttendees.forEach((att, index) => {
+          if (!att.name.trim()) {
+            newErrors[`attendee-${productId}-${index}-name`] = "Attendee name is required";
+          }
+          if (!att.email.trim()) {
+            newErrors[`attendee-${productId}-${index}-email`] = "Attendee email is required";
+          } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(att.email)) {
+            newErrors[`attendee-${productId}-${index}-email`] = "Invalid email address";
+          }
+        });
+      });
+    }
+    
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -126,13 +214,33 @@ function CheckoutContent() {
     
     // Create orders for each item
     for (const item of checkoutItems) {
-      storage.addOrder({
+      // Prepare attendees for event products
+      let orderAttendees: Attendee[] | undefined;
+      if (item.product.type === "event" && attendees[item.product.id]) {
+        orderAttendees = attendees[item.product.id].map((att, index) => ({
+          id: `att-${Date.now()}-${index}`,
+          name: att.name,
+          email: att.email,
+          phone: att.phone || undefined,
+          ticketNumber: `TKT-${Date.now().toString(36).toUpperCase()}-${(index + 1).toString().padStart(3, '0')}`,
+        }));
+      }
+      
+      const order = storage.addOrder({
         customer: name,
         customerEmail: email,
         product: item.product.title,
+        productId: item.product.id,
+        productType: item.product.type,
         amount: item.product.price * item.quantity,
         status: "completed",
+        attendees: orderAttendees,
       });
+      
+      // Link order to customer
+      if (customer) {
+        storage.addOrderToCustomer(customer.id, order.id);
+      }
       
       // Update product sales
       storage.updateProduct(item.product.id, {
@@ -298,9 +406,20 @@ function CheckoutContent() {
                 <span className="text-xl font-bold text-gray-900">{footer.storeName}</span>
               )}
             </Link>
-            <div className="flex items-center gap-2 text-sm text-gray-500">
-              <Lock className="w-4 h-4" />
-              Secure Checkout
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2 text-sm text-gray-500">
+                <Lock className="w-4 h-4" />
+                Secure Checkout
+              </div>
+              {customer && (
+                <Link
+                  href={`/store/${slug}/account`}
+                  className="flex items-center gap-2 text-sm text-indigo-600 hover:opacity-80 transition-opacity"
+                >
+                  <User className="w-4 h-4" />
+                  <span className="hidden sm:inline">{customer.name}</span>
+                </Link>
+              )}
             </div>
           </div>
         </div>
@@ -444,6 +563,118 @@ function CheckoutContent() {
                   Your payment information is secure and encrypted
                 </p>
               </div>
+
+              {/* Attendee Information for Events */}
+              {hasEventProducts && (
+                <div className="bg-white rounded-xl p-6 border border-gray-200">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Users className="w-5 h-5 text-indigo-600" />
+                    <h2 className="text-lg font-semibold text-gray-900">Attendee Information</h2>
+                  </div>
+                  <p className="text-sm text-gray-500 mb-4">
+                    Please provide details for each ticket holder. Ticket information will be sent to each attendee.
+                  </p>
+                  
+                  {checkoutItems
+                    .filter(item => item.product.type === "event")
+                    .map(item => (
+                      <div key={item.product.id} className="mb-6 last:mb-0">
+                        <div className="flex items-center gap-2 mb-3 pb-2 border-b border-gray-100">
+                          <div className="w-2 h-2 rounded-full bg-indigo-500" />
+                          <h3 className="font-medium text-gray-900 text-sm">{item.product.title}</h3>
+                          <span className="text-xs text-gray-500 ml-auto">
+                            {item.quantity} ticket{item.quantity > 1 ? 's' : ''}
+                          </span>
+                        </div>
+                        
+                        {attendees[item.product.id]?.map((attendee, index) => (
+                          <div 
+                            key={attendee.id} 
+                            className="bg-gray-50 rounded-lg p-4 mb-3 last:mb-0"
+                          >
+                            <div className="flex items-center gap-2 mb-3">
+                              <div className="w-6 h-6 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 text-xs font-semibold">
+                                {index + 1}
+                              </div>
+                              <span className="text-sm font-medium text-gray-700">
+                                Attendee {index + 1}
+                              </span>
+                            </div>
+                            
+                            <div className="space-y-3">
+                              <div>
+                                <label className="block text-xs font-medium text-gray-600 mb-1">
+                                  Full Name *
+                                </label>
+                                <div className="relative">
+                                  <input
+                                    type="text"
+                                    value={attendee.name}
+                                    onChange={(e) => updateAttendee(item.product.id, index, 'name', e.target.value)}
+                                    placeholder="Enter attendee name"
+                                    className={`w-full px-3 py-2 pl-9 text-sm rounded-lg border ${
+                                      errors[`attendee-${item.product.id}-${index}-name`] 
+                                        ? "border-red-500" 
+                                        : "border-gray-200"
+                                    } focus:ring-2 focus:ring-indigo-500 focus:border-transparent`}
+                                  />
+                                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                </div>
+                                {errors[`attendee-${item.product.id}-${index}-name`] && (
+                                  <p className="text-red-500 text-xs mt-1">
+                                    {errors[`attendee-${item.product.id}-${index}-name`]}
+                                  </p>
+                                )}
+                              </div>
+                              
+                              <div>
+                                <label className="block text-xs font-medium text-gray-600 mb-1">
+                                  Email Address *
+                                </label>
+                                <div className="relative">
+                                  <input
+                                    type="email"
+                                    value={attendee.email}
+                                    onChange={(e) => updateAttendee(item.product.id, index, 'email', e.target.value)}
+                                    placeholder="attendee@email.com"
+                                    className={`w-full px-3 py-2 pl-9 text-sm rounded-lg border ${
+                                      errors[`attendee-${item.product.id}-${index}-email`] 
+                                        ? "border-red-500" 
+                                        : "border-gray-200"
+                                    } focus:ring-2 focus:ring-indigo-500 focus:border-transparent`}
+                                  />
+                                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                </div>
+                                {errors[`attendee-${item.product.id}-${index}-email`] && (
+                                  <p className="text-red-500 text-xs mt-1">
+                                    {errors[`attendee-${item.product.id}-${index}-email`]}
+                                  </p>
+                                )}
+                              </div>
+                              
+                              <div>
+                                <label className="block text-xs font-medium text-gray-600 mb-1">
+                                  Phone Number (optional)
+                                </label>
+                                <div className="relative">
+                                  <input
+                                    type="tel"
+                                    value={attendee.phone}
+                                    onChange={(e) => updateAttendee(item.product.id, index, 'phone', e.target.value)}
+                                    placeholder="+1 (555) 000-0000"
+                                    className="w-full px-3 py-2 pl-9 text-sm rounded-lg border border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                  />
+                                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ))
+                  }
+                </div>
+              )}
 
               {/* Submit Button */}
               <button

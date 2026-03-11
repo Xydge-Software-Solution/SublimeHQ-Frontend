@@ -177,14 +177,27 @@ export interface Product {
   membershipDetails?: MembershipDetails;
 }
 
+// Attendee info for event/ticket products
+export interface Attendee {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  ticketNumber: string;
+}
+
 export interface Order {
   id: string;
   customer: string;
   customerEmail: string;
   product: string;
+  productId: string;
+  productType: ProductType;
   amount: number;
   status: "completed" | "pending" | "processing" | "cancelled";
   createdAt: string;
+  // Event/ticket specific
+  attendees?: Attendee[];
 }
 
 export interface DashboardStats {
@@ -351,6 +364,38 @@ export interface AppSettings {
   };
 }
 
+// Customer types (store buyers)
+export interface Customer {
+  id: string;
+  name: string;
+  email: string;
+  password: string; // In production, this would be hashed
+  phone?: string;
+  avatar?: string;
+  createdAt: string;
+  orders: string[]; // Order IDs
+  storeSlug: string; // Which store they registered with
+}
+
+export interface CustomerAuth {
+  isAuthenticated: boolean;
+  customer: Customer | null;
+}
+
+// Product Review types
+export interface ProductReview {
+  id: string;
+  productId: string;
+  customerId: string;
+  customerName: string;
+  rating: number; // 1-5
+  title: string;
+  content: string;
+  createdAt: string;
+  helpful: number; // count of "helpful" votes
+  verified: boolean; // true if customer purchased the product
+}
+
 export interface StoreData {
   user: UserData | null;
   onboarding: OnboardingData | null;
@@ -364,6 +409,9 @@ export interface StoreData {
   payouts: Payout[];
   accountSettings: AccountSettings | null;
   appSettings: AppSettings;
+  customers: Customer[];
+  customerAuth: CustomerAuth;
+  reviews: ProductReview[];
   isAuthenticated: boolean;
   hasCompletedOnboarding: boolean;
 }
@@ -453,14 +501,14 @@ const defaultProducts: Product[] = [
 ];
 
 const defaultOrders: Order[] = [
-  { id: "#3210", customer: "John Smith", customerEmail: "john@email.com", product: "Digital Marketing Masterclass", amount: 49.99, status: "completed", createdAt: "2024-03-05" },
-  { id: "#3209", customer: "Emily Chen", customerEmail: "emily@email.com", product: "E-book Bundle", amount: 29.99, status: "completed", createdAt: "2024-03-05" },
-  { id: "#3208", customer: "Michael Brown", customerEmail: "michael@email.com", product: "1-on-1 Coaching", amount: 199.00, status: "pending", createdAt: "2024-03-04" },
-  { id: "#3207", customer: "Sarah Wilson", customerEmail: "sarah@email.com", product: "Template Pack", amount: 19.99, status: "completed", createdAt: "2024-03-04" },
-  { id: "#3206", customer: "David Lee", customerEmail: "david@email.com", product: "Premium Membership", amount: 99.00, status: "processing", createdAt: "2024-03-03" },
-  { id: "#3205", customer: "Anna Martinez", customerEmail: "anna@email.com", product: "Video Editing Course", amount: 79.99, status: "completed", createdAt: "2024-03-03" },
-  { id: "#3204", customer: "James Taylor", customerEmail: "james@email.com", product: "Email Marketing Toolkit", amount: 39.99, status: "completed", createdAt: "2024-03-02" },
-  { id: "#3203", customer: "Lisa Anderson", customerEmail: "lisa@email.com", product: "Digital Marketing Masterclass", amount: 49.99, status: "completed", createdAt: "2024-03-01" },
+  { id: "#3210", customer: "John Smith", customerEmail: "john@email.com", product: "Digital Marketing Masterclass", productId: "prod_1", productType: "course", amount: 49.99, status: "completed", createdAt: "2024-03-05" },
+  { id: "#3209", customer: "Emily Chen", customerEmail: "emily@email.com", product: "E-book Bundle", productId: "prod_2", productType: "digital", amount: 29.99, status: "completed", createdAt: "2024-03-05" },
+  { id: "#3208", customer: "Michael Brown", customerEmail: "michael@email.com", product: "1-on-1 Coaching", productId: "prod_3", productType: "coaching", amount: 199.00, status: "pending", createdAt: "2024-03-04" },
+  { id: "#3207", customer: "Sarah Wilson", customerEmail: "sarah@email.com", product: "Template Pack", productId: "prod_4", productType: "digital", amount: 19.99, status: "completed", createdAt: "2024-03-04" },
+  { id: "#3206", customer: "David Lee", customerEmail: "david@email.com", product: "Premium Membership", productId: "prod_5", productType: "membership", amount: 99.00, status: "processing", createdAt: "2024-03-03" },
+  { id: "#3205", customer: "Anna Martinez", customerEmail: "anna@email.com", product: "Video Editing Course", productId: "prod_6", productType: "video", amount: 79.99, status: "completed", createdAt: "2024-03-03" },
+  { id: "#3204", customer: "James Taylor", customerEmail: "james@email.com", product: "Email Marketing Toolkit", productId: "prod_2", productType: "digital", amount: 39.99, status: "completed", createdAt: "2024-03-02" },
+  { id: "#3203", customer: "Lisa Anderson", customerEmail: "lisa@email.com", product: "Digital Marketing Masterclass", productId: "prod_1", productType: "course", amount: 49.99, status: "completed", createdAt: "2024-03-01" },
 ];
 
 const defaultStats: DashboardStats = {
@@ -589,6 +637,9 @@ function getDefaultStore(): StoreData {
     payouts: defaultPayouts,
     accountSettings: null,
     appSettings: defaultAppSettings,
+    customers: [],
+    customerAuth: { isAuthenticated: false, customer: null },
+    reviews: [],
     isAuthenticated: true,
     hasCompletedOnboarding: false,
   };
@@ -640,6 +691,9 @@ export const storage = {
           ...defaults.cart,
           ...(parsed.cart || {}),
         },
+        customers: parsed.customers || [],
+        customerAuth: parsed.customerAuth || { isAuthenticated: false, customer: null },
+        reviews: parsed.reviews || [],
       };
       
       // Save merged data back if storefront or cart was missing
@@ -1096,6 +1150,168 @@ export const storage = {
     const store = this.getStore();
     store.appSettings.display = { ...store.appSettings.display, ...settings };
     this.setStore(store);
+  },
+
+  // Customer methods (store buyers)
+  getCustomers(): Customer[] {
+    return this.getStore().customers;
+  },
+
+  getCustomerById(id: string): Customer | null {
+    return this.getStore().customers.find((c) => c.id === id) || null;
+  },
+
+  getCustomerByEmail(email: string): Customer | null {
+    return this.getStore().customers.find((c) => c.email.toLowerCase() === email.toLowerCase()) || null;
+  },
+
+  registerCustomer(data: { name: string; email: string; password: string; storeSlug: string }): Customer | { error: string } {
+    const store = this.getStore();
+    
+    // Check if customer already exists
+    const existingCustomer = store.customers.find(
+      (c) => c.email.toLowerCase() === data.email.toLowerCase()
+    );
+    
+    if (existingCustomer) {
+      return { error: "An account with this email already exists" };
+    }
+
+    const newCustomer: Customer = {
+      id: `cust_${Date.now()}`,
+      name: data.name,
+      email: data.email,
+      password: data.password, // In production, this would be hashed
+      createdAt: new Date().toISOString(),
+      orders: [],
+      storeSlug: data.storeSlug,
+    };
+
+    store.customers.push(newCustomer);
+    store.customerAuth = { isAuthenticated: true, customer: newCustomer };
+    this.setStore(store);
+    return newCustomer;
+  },
+
+  loginCustomer(email: string, password: string): Customer | { error: string } {
+    const store = this.getStore();
+    const customer = store.customers.find(
+      (c) => c.email.toLowerCase() === email.toLowerCase()
+    );
+
+    if (!customer) {
+      return { error: "No account found with this email" };
+    }
+
+    if (customer.password !== password) {
+      return { error: "Invalid password" };
+    }
+
+    store.customerAuth = { isAuthenticated: true, customer };
+    this.setStore(store);
+    return customer;
+  },
+
+  logoutCustomer(): void {
+    const store = this.getStore();
+    store.customerAuth = { isAuthenticated: false, customer: null };
+    this.setStore(store);
+  },
+
+  getCustomerAuth(): CustomerAuth {
+    return this.getStore().customerAuth;
+  },
+
+  isCustomerAuthenticated(): boolean {
+    return this.getStore().customerAuth.isAuthenticated;
+  },
+
+  getCurrentCustomer(): Customer | null {
+    return this.getStore().customerAuth.customer;
+  },
+
+  addOrderToCustomer(customerId: string, orderId: string): void {
+    const store = this.getStore();
+    const customer = store.customers.find((c) => c.id === customerId);
+    if (customer) {
+      customer.orders.push(orderId);
+      // Update customerAuth if this is the logged-in customer
+      if (store.customerAuth.customer?.id === customerId) {
+        store.customerAuth.customer = customer;
+      }
+      this.setStore(store);
+    }
+  },
+
+  getCustomerOrders(customerId: string): Order[] {
+    const store = this.getStore();
+    const customer = store.customers.find((c) => c.id === customerId);
+    if (!customer) return [];
+    return store.orders.filter((order) => customer.orders.includes(order.id));
+  },
+
+  // Review methods
+  getProductReviews(productId: string): ProductReview[] {
+    return this.getStore().reviews.filter((r) => r.productId === productId);
+  },
+
+  addReview(review: Omit<ProductReview, "id" | "createdAt" | "helpful">): ProductReview {
+    const store = this.getStore();
+    const newReview: ProductReview = {
+      ...review,
+      id: `rev_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      createdAt: new Date().toISOString(),
+      helpful: 0,
+    };
+    store.reviews.push(newReview);
+    
+    // Update product rating and reviewCount
+    const product = store.products.find((p) => p.id === review.productId);
+    if (product) {
+      const productReviews = store.reviews.filter((r) => r.productId === review.productId);
+      const avgRating = productReviews.reduce((sum, r) => sum + r.rating, 0) / productReviews.length;
+      product.rating = Math.round(avgRating * 10) / 10; // Round to 1 decimal
+      product.reviewCount = productReviews.length;
+    }
+    
+    this.setStore(store);
+    return newReview;
+  },
+
+  canReviewProduct(customerId: string, productId: string): { canReview: boolean; reason?: string } {
+    const store = this.getStore();
+    
+    // Check if customer has already reviewed this product
+    const existingReview = store.reviews.find(
+      (r) => r.customerId === customerId && r.productId === productId
+    );
+    if (existingReview) {
+      return { canReview: false, reason: "You have already reviewed this product" };
+    }
+    
+    // Check if customer has purchased this product
+    const customer = store.customers.find((c) => c.id === customerId);
+    if (!customer) {
+      return { canReview: false, reason: "Customer not found" };
+    }
+    
+    const customerOrders = store.orders.filter((o) => customer.orders.includes(o.id));
+    const hasPurchased = customerOrders.some((order) => {
+      // Check if any order contains this product (order.product stores product name, not ID)
+      const product = store.products.find((p) => p.id === productId);
+      return product && order.product === product.title;
+    });
+    
+    return { canReview: true, reason: hasPurchased ? undefined : "not_purchased" };
+  },
+
+  markReviewHelpful(reviewId: string): void {
+    const store = this.getStore();
+    const review = store.reviews.find((r) => r.id === reviewId);
+    if (review) {
+      review.helpful += 1;
+      this.setStore(store);
+    }
   },
 
   // Reset to default data

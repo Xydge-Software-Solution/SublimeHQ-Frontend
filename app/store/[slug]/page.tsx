@@ -4,11 +4,12 @@ import { useEffect, useState, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ShoppingCart, Star, Mail, ExternalLink, Plus, Check } from "lucide-react";
+import { ShoppingCart, Star, Mail, ExternalLink, Plus, Check, User, LogIn } from "lucide-react";
 import {
   storage,
   type StorefrontSettings,
   type Product,
+  type Customer,
 } from "@/lib/storage";
 
 export default function PublicStorefrontPage() {
@@ -19,6 +20,7 @@ export default function PublicStorefrontPage() {
   const [cartCount, setCartCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [addedProducts, setAddedProducts] = useState<Set<string>>(new Set());
+  const [customer, setCustomer] = useState<Customer | null>(null);
 
   const loadStorefrontData = useCallback(() => {
     const storefrontData = storage.getStorefront();
@@ -32,6 +34,11 @@ export default function PublicStorefrontPage() {
     setSettings(storefrontData);
     setProducts(storefrontProducts);
     setCartCount(storage.getCartItemCount());
+    
+    // Check customer authentication
+    const customerAuth = storage.getCustomerAuth();
+    setCustomer(customerAuth.isAuthenticated ? customerAuth.customer : null);
+    
     setIsLoading(false);
   }, []);
 
@@ -113,17 +120,43 @@ export default function PublicStorefrontPage() {
             </Link>
 
             {navbar.showCart && (
-              <Link 
-                href={`/store/${slug}/cart`}
-                className="relative p-2 text-gray-600 hover:text-gray-900 transition-colors"
-              >
-                <ShoppingCart className="w-6 h-6" />
-                {cartCount > 0 && (
-                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-blue-600 text-white text-xs font-bold rounded-full flex items-center justify-center">
-                    {cartCount}
-                  </span>
+              <div className="flex items-center gap-3">
+                {/* User Avatar / Login */}
+                {customer ? (
+                  <Link
+                    href={`/store/${slug}/account`}
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
+                  >
+                    <div className="w-7 h-7 rounded-full bg-blue-600 flex items-center justify-center text-white text-sm font-medium">
+                      {customer.name.charAt(0).toUpperCase()}
+                    </div>
+                    <span className="text-sm font-medium text-gray-700 hidden sm:block">
+                      {customer.name.split(" ")[0]}
+                    </span>
+                  </Link>
+                ) : (
+                  <Link
+                    href={`/store/${slug}/login`}
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors text-gray-600"
+                  >
+                    <LogIn className="w-4 h-4" />
+                    <span className="text-sm font-medium hidden sm:block">Sign In</span>
+                  </Link>
                 )}
-              </Link>
+                
+                {/* Cart */}
+                <Link 
+                  href={`/store/${slug}/cart`}
+                  className="relative p-2 text-gray-600 hover:text-gray-900 transition-colors"
+                >
+                  <ShoppingCart className="w-6 h-6" />
+                  {cartCount > 0 && (
+                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-blue-600 text-white text-xs font-bold rounded-full flex items-center justify-center">
+                      {cartCount}
+                    </span>
+                  )}
+                </Link>
+              </div>
             )}
           </div>
         </div>
