@@ -4,6 +4,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { storage } from '@/lib/storage';
+import AuthCarousel from '@/components/AuthCarousel';
+import AnimatedBackground from '@/components/AnimatedBackground';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -73,26 +75,26 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-600 via-blue-500 to-cyan-400 flex flex-col justify-center gap-10">
-      {/* Logo */}
-      <div className="pt-8 pb-4 flex justify-center">
-        <Link href="/">
-          <Image
-            src="/logo.png"
-            alt="Sublime"
-            width={120}
-            height={40}
-            className="h-12 w-auto"
-            priority
-          />
-        </Link>
-      </div>
-
+    <div className="min-h-screen bg-gray-50 flex flex-col lg:flex-row">
       {/* Main Content */}
-      <div className="flex items-center justify-center px-4 pb-8">
-        <div className="w-full max-w-2xl">
-          {/* Card */}
-          <div className="bg-white rounded-xl shadow-2xl p-8 md:p-10">
+      <div className="flex-1 flex flex-col justify-center px-4 sm:px-6 lg:px-8 py-12 lg:py-0 w-full lg:w-1/2 relative bg-white overflow-hidden">
+        <AnimatedBackground />
+        <div className="w-full max-w-md mx-auto relative z-10">
+          {/* Header */}
+          <div className="pb-8">
+            <Link href="/" className="inline-block">
+              <Image
+                src="/logo.png"
+                alt="Sublime"
+                width={140}
+                height={48}
+                className="h-10 w-auto"
+                priority
+              />
+            </Link>
+          </div>
+
+          <div className="bg-white rounded-3xl shadow-sm border border-gray-200 p-8 sm:p-10">
             {/* Back Button (when showing email form) */}
             {showEmailForm && (
               <button 
@@ -247,6 +249,11 @@ export default function LoginPage() {
             </p>
           </div>
         </div>
+      </div>
+
+      {/* Right Side Carousel Base Layout */}
+      <div className="hidden lg:block lg:w-1/2">
+        <AuthCarousel />
       </div>
     </div>
   );

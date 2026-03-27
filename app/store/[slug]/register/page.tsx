@@ -2,9 +2,12 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { Mail, Lock, User, Loader2, ArrowLeft, ShoppingBag, Eye, EyeOff, Check } from "lucide-react";
 import { storage, type StorefrontSettings } from "@/lib/storage";
+import AuthCarousel from "@/components/AuthCarousel";
+import AnimatedBackground from "@/components/AnimatedBackground";
 
 export default function StoreRegisterPage() {
   const params = useParams();
@@ -13,8 +16,7 @@ export default function StoreRegisterPage() {
   const slug = params.slug as string;
   const redirectTo = searchParams.get("redirect") || `/store/${slug}`;
 
-  const [settings, setSettings] = useState<StorefrontSettings | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [settings] = useState<StorefrontSettings | null>(storage.getStorefront());
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -25,16 +27,11 @@ export default function StoreRegisterPage() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    const storefrontData = storage.getStorefront();
-    setSettings(storefrontData);
-
     // Check if already logged in
     if (storage.isCustomerAuthenticated()) {
       router.push(redirectTo);
       return;
     }
-
-    setIsLoading(false);
   }, [router, redirectTo]);
 
   const passwordStrength = () => {
@@ -105,52 +102,48 @@ export default function StoreRegisterPage() {
     router.push(redirectTo);
   };
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full" />
-      </div>
-    );
-  }
-
   const primaryColor = "#6366f1";
   const strength = passwordStrength();
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <Link
-              href={`/store/${slug}`}
-              className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
-            >
-              <ArrowLeft className="w-5 h-5" />
-              <span className="font-medium">Back to Store</span>
-            </Link>
-            <Link href={`/store/${slug}`} className="flex items-center gap-2">
-              {settings?.navbar.logoUrl ? (
-                <img
-                  src={settings.navbar.logoUrl}
-                  alt={settings.footer.storeName}
-                  className="h-8 w-auto"
-                />
-              ) : (
-                <ShoppingBag className="w-6 h-6" style={{ color: primaryColor }} />
-              )}
-              <span className="text-lg font-semibold text-gray-900">
-                {settings?.footer.storeName || "Store"}
-              </span>
-            </Link>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen bg-gray-50 flex flex-col lg:flex-row">
+      <div className="flex-1 flex flex-col w-full lg:w-1/2 relative bg-white overflow-hidden">
+        <AnimatedBackground />
 
-      {/* Main Content */}
-      <main className="flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-        <div className="w-full max-w-md">
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
+        {/* Header */}
+        <header className="bg-white/90 backdrop-blur-sm border-b border-white/20 shrink-0 relative z-10">
+          <div className="px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center justify-between h-16 max-w-2xl mx-auto lg:mx-0">
+              <Link
+                href={`/store/${slug}`}
+                className="flex items-center gap-2 text-gray-700 hover:text-gray-900 transition-colors"
+              >
+                <ArrowLeft className="w-5 h-5" />
+                <span className="font-medium">Back to Store</span>
+              </Link>
+              <Link href={`/store/${slug}`} className="flex items-center gap-2">
+                {settings?.navbar.logoUrl ? (
+                  <Image
+                    src={settings.navbar.logoUrl}
+                    alt={settings.footer.storeName}
+                    width={120}
+                    height={32}
+                    className="h-8 w-auto"
+                  />
+                ) : (
+                  <ShoppingBag className="w-6 h-6" style={{ color: primaryColor }} />
+                )}
+                <span className="text-lg font-semibold text-gray-900">
+                  {settings?.footer.storeName || "Store"}
+                </span>
+              </Link>
+            </div>
+          </div>
+        </header>
+
+        {/* Main Content */}
+        <main className="flex-1 flex flex-col justify-center px-4 sm:px-6 lg:px-8 max-w-2xl w-full mx-auto lg:mx-0 py-12 relative z-10">
+          <div className="bg-white rounded-3xl shadow-sm border border-gray-200 p-8 sm:p-10">
             <div className="text-center mb-8">
               <h1 className="text-2xl font-bold text-gray-900">Create an account</h1>
               <p className="text-gray-500 mt-2">
@@ -289,11 +282,15 @@ export default function StoreRegisterPage() {
             </div>
           </div>
 
-          <p className="text-center text-sm text-gray-500 mt-6">
+          <p className="text-center text-sm text-gray-500 mt-8">
             By creating an account, you agree to the store&apos;s terms and privacy policy.
           </p>
-        </div>
-      </main>
+        </main>
+      </div>
+
+      <div className="hidden lg:block lg:w-1/2">
+        <AuthCarousel />
+      </div>
     </div>
   );
 }

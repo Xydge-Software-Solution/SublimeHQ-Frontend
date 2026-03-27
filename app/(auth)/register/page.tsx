@@ -3,6 +3,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { storage } from '@/lib/storage';
+import AuthCarousel from '@/components/AuthCarousel';
+import AnimatedBackground from '@/components/AnimatedBackground';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -15,26 +17,26 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-600 via-blue-500 to-cyan-400 flex flex-col justify-center">
-      {/* Logo */}
-      <div className="pt-8 pb-4 flex justify-center">
-        <Link href="/">
-          <Image
-            src="/logo.png"
-            alt="Sublime"
-            width={120}
-            height={40}
-            className="h-12 w-auto"
-            priority
-          />
-        </Link>
-      </div>
-
+    <div className="min-h-screen bg-gray-50 flex flex-col lg:flex-row">
       {/* Main Content */}
-      <div className=" flex items-center justify-center p-8 pb-8">
-        <div className="w-full md:max-w-2xl p-8">
-          {/* Card */}
-          <div className="bg-white rounded-xl shadow-2xl p-8 md:p-10">
+      <div className="flex-1 flex flex-col justify-center px-4 sm:px-6 lg:px-8 py-12 lg:py-0 w-full lg:w-1/2 relative bg-white overflow-hidden">
+        <AnimatedBackground />
+        <div className="w-full max-w-md mx-auto relative z-10">
+          {/* Header */}
+          <div className="pb-8">
+            <Link href="/" className="inline-block">
+              <Image
+                src="/logo.png"
+                alt="Sublime"
+                width={140}
+                height={48}
+                className="h-10 w-auto"
+                priority
+              />
+            </Link>
+          </div>
+
+          <div className="bg-white rounded-3xl shadow-sm border border-gray-200 p-8 sm:p-10">
             {/* Title */}
             <h1 className="text-2xl md:text-3xl font-bold text-gray-900 text-center mb-3">
               Turn your product into a live storefront in minutes
@@ -105,13 +107,18 @@ export default function RegisterPage() {
           </div>
 
           {/* Terms */}
-          <p className="text-center text-white/70 text-sm mt-6 px-4">
+          <p className="text-center text-gray-500 text-sm mt-8">
             By continuing, you agree to our{' '}
-            <Link href="/terms" className="underline hover:text-white">Terms of Service</Link>
+            <Link href="/terms" className="text-gray-900 hover:underline">Terms of Service</Link>
             {' '}and{' '}
-            <Link href="/privacy" className="underline hover:text-white">Privacy Policy</Link>
+            <Link href="/privacy" className="text-gray-900 hover:underline">Privacy Policy</Link>
           </p>
         </div>
+      </div>
+      
+      {/* Right Carousel Section */}
+      <div className="hidden lg:block lg:w-1/2">
+        <AuthCarousel />
       </div>
     </div>
   );
