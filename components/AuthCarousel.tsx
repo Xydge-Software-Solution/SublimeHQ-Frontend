@@ -27,7 +27,7 @@ const slides: Slide[] = [
     image: "https://images.unsplash.com/photo-1531058020387-3be344556be6?q=80&w=1080",
     title: "Host Memorable Events",
     description: "Whether in-person, hybrid, or virtual. Sell tickets, manage RSVPs, and create unforgettable experiences securely.",
-    icon: <CalendarHeart className="w-6 h-6 text-pink-400" />,
+    icon: <CalendarHeart className="w-6 h-6 text-cyan-600" />,
   },
   {
     id: "classes",
