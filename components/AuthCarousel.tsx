@@ -31,7 +31,7 @@ const slides: Slide[] = [
   },
   {
     id: "classes",
-    // African teacher giving online class - FIXED URL
+    // African teacher giving online class 
     image: "https://images.unsplash.com/photo-1531384441138-2736e62e0919?q=80&w=1080",
     title: "Teach & Inspire",
     description: "Offer online masterclasses and courses. Setup seamless checkout and beautifully crafted landing pages for your students.",
