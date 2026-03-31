@@ -39,7 +39,7 @@ const slides: Slide[] = [
   },
   {
     id: "streamer",
-    // African social media streamer/podcaster
+    // African social media streamer
     image: "https://images.unsplash.com/photo-1534030347209-467a5b0ad3e6?q=80&w=1080",
     title: "Monetize Your Audience",
     description: "Turn your passion into a business. Engage with your audience through premium streams and exclusive communities.",
